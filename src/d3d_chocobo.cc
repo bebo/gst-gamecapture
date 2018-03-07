@@ -1,9 +1,7 @@
 #include "d3d_chocobo.h"
 
-#define WGL_WGLEXT_PROTOTYPES
-
-#include <GL/gl.h>
-#include <GL/wglext.h>
+#include <GL/glew.h>
+#include <GL/wglew.h>
 
 const static D3D_FEATURE_LEVEL featureLevels[] =
 {
@@ -38,6 +36,7 @@ void d3d11_create_device() {
 
   hr = device->OpenSharedResource(handle,
       __uuidof(ID3D11Texture2D), (void**)&resource);
+
 #if 0
   ID3D11Texture2D* shared_texture = (ID3D11Texture2D*)1;
   wglDXSetResourceShareHandleNV(shared_texture, handle);
