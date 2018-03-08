@@ -54,14 +54,14 @@ static void gst_chocobopushsrc_get_property(GObject *object, guint prop_id,
     GValue *value, GParamSpec *pspec);
 static void gst_chocobopushsrc_finalize(GObject *gobject);
 /* GstBaseSrc */
+static gboolean gst_chocobopushsrc_decide_allocation(GstBaseSrc *basesrc,
+    GstQuery *query);
 static GstCaps *gst_chocobopushsrc_get_caps(GstBaseSrc *basesrc,
     GstCaps *filter);
 static gboolean gst_chocobopushsrc_set_caps(GstBaseSrc *bsrc, GstCaps *caps);
 static gboolean gst_chocobopushsrc_start(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_stop(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_is_seekable(GstBaseSrc *src);
-static gboolean gst_chocobopushsrc_propose_allocation(GstBaseSrc *bsrc,
-    GstQuery *query);
 static gboolean gst_chocobopushsrc_unlock(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_unlock_stop(GstBaseSrc *src);
 /* GstPushSrc */
@@ -93,6 +93,8 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
     gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
     gstbasesrc_class->start = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_start);
     gstbasesrc_class->stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_stop);
+    // gstbasesrc_class->decide_allocation = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_decide_allocation);
+
     gstpushsrc_class->create = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_create);
 
 #if 0
@@ -171,8 +173,8 @@ gst_chocobopushsrc_get_property(GObject *object, guint prop_id, GValue *value,
 
 /* GstBaseSrcClass Functions */
 
-static GstCaps 
-*gst_chocobopushsrc_get_caps(GstBaseSrc *basesrc, GstCaps *filter)
+static GstCaps *
+gst_chocobopushsrc_get_caps(GstBaseSrc *basesrc, GstCaps *filter)
 {
     GstChocoboPushSrc *src = GST_CHOCOBO(basesrc);
     GstCaps *caps;
@@ -249,7 +251,7 @@ gst_chocobopushsrc_create(GstPushSrc *src, GstBuffer **buf)
 }
 
 static gboolean
-gst_chocobopushsrc_propose_allocation(GstBaseSrc *bsrc, GstQuery *query)
+gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
 {
     GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
     GstBufferPool *pool;

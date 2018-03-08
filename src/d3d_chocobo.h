@@ -13,6 +13,7 @@ GST_EXPORT GstDebugCategory *gst_chocobopushsrc_debug;
 #define GST_CAT_DEFAULT gst_chocobopushsrc_debug
   
 
+void init_gl();
 void d3d11_create_device();
 
 #ifdef __cplusplus
