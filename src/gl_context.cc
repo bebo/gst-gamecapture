@@ -158,20 +158,17 @@ gboolean gl_ensure_context(GLContext* context) {
   return TRUE;
 }
 
-static gpointer first_frame_buffer = g_malloc(1280 * 720 * 4);
-static unsigned long i = 0;
 gboolean gl_get_frame(GLContext* context, void* buffer) {
   if (!gl_ensure_context(context)) {
     return FALSE;
   }
-  i++;
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glClearColor(0.4f, 0.0f, 0.1f * (i * 0.005f), 1.0f);
+  glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
   wglDXLockObjectsNV(context->device_handle, 1, &context->texture_handle);

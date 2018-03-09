@@ -241,10 +241,9 @@ gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf)
 {
   Chocobo *context = (Chocobo*) chocobo_context;
 
+  // TODO remove g_malloc
   void *fake_frame = g_malloc(bufsize);
 
-  memset(fake_frame, 0, bufsize); // gray
-  // memset(fake_frame, 0, bufsize); // trans?
   while (!gl_get_frame(context->gl_context, fake_frame)) {
     Sleep(10);
   }
