@@ -21,6 +21,9 @@
 
 #include <gst/gst.h>
 #include <gst/base/gstpushsrc.h>
+
+#include <gst/gl/gl.h>
+
 #include <gst/video/gstvideometa.h>
 #include <gst/video/video.h>
 
@@ -42,16 +45,18 @@ struct _GstChocoboPushSrc
 
     GstCaps            *supported_caps;
 
-    GstVideoFormat     format;
-    GstVideoInfo       info;
-    gint               width;
-    gint               height;
-    GstBufferPool      *pool;
-    GstBufferPool      *fallback_pool;
-    GstBuffer          *fallback_buffer;
-
-    GstVideoRectangle  crop_rect;
-    GstVideoRectangle  render_rect;
+    GstVideoInfo out_info;
+    GstGLFramebuffer *fbo;
+    GstGLMemory *out_tex;
+    GstGLShader *shader;
+    GstBufferPool *pool;
+    GstBuffer *current_buffer;
+    GstGLDisplay *display;
+    GstGLContext *context, *other_context;
+    gint64 timestamp_offset;              /* base offset */
+    GstClockTime running_time;            /* total running time */
+    gint64 n_frames;                      /* total frames sent */
+    gboolean negotiated;
 
     GRecMutex          lock;
 };

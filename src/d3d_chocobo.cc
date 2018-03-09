@@ -14,7 +14,7 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 #if 0
   HANDLE handle = (HANDLE)3221245890;
 #else
-  HANDLE handle = (HANDLE)2147508610;
+  HANDLE handle = (HANDLE)1073744770;
 #endif
 
 void* d3d11_create_device() {
