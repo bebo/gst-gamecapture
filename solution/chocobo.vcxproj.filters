@@ -24,12 +24,18 @@
     <ClInclude Include="..\src\d3d_chocobo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\gl_context.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\gst_chocobo_push_src.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\d3d_chocobo.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gl_context.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

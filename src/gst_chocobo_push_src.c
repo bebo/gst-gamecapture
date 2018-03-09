@@ -22,6 +22,7 @@
 
 #include "gst_chocobo_push_src.h"
 #include "d3d_chocobo.h"
+#include "gl_context.h"
 
 #define ELEMENT_NAME  "chocobopushsrc"
 
@@ -65,13 +66,15 @@ static gboolean gst_chocobopushsrc_is_seekable(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_unlock(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_unlock_stop(GstBaseSrc *src);
 /* GstPushSrc */
-static gboolean gst_chocobopushsrc_create(GstPushSrc *src, GstBuffer **buf);
+static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 #define _do_init \
   GST_DEBUG_CATEGORY_INIT (gst_chocobopushsrc_debug, ELEMENT_NAME, 0, "Chocobo Video");
 
 G_DEFINE_TYPE_WITH_CODE(GstChocoboPushSrc, gst_chocobopushsrc, GST_TYPE_PUSH_SRC,
     _do_init);
+
+static void *chocobo_context;
 
 static void
 gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
@@ -95,7 +98,7 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
     gstbasesrc_class->stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_stop);
     // gstbasesrc_class->decide_allocation = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_decide_allocation);
 
-    gstpushsrc_class->create = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_create);
+    gstpushsrc_class->fill = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fill);
 
 #if 0
     gstbasesrc_class->get_caps = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_get_caps);
@@ -216,7 +219,7 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
     GST_DEBUG_OBJECT(bsrc, "Start() called");
 
-    d3d11_create_device();
+    chocobo_context = d3d11_create_device();
 
     return TRUE; // d3d_class_init(src);
 }
@@ -231,22 +234,24 @@ gst_chocobopushsrc_stop(GstBaseSrc *bsrc)
     return TRUE;
 }
 
+#define bufsize (WIDTH * HEIGHT * 4 * 1)
+
 static GstFlowReturn
-gst_chocobopushsrc_create(GstPushSrc *src, GstBuffer **buf)
+gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf)
 {
-  // gsize bufsize = WIDTH * HEIGHT * 4;
-  GST_INFO("jake create");
+  Chocobo *context = (Chocobo*) chocobo_context;
 
-  int bufsize = WIDTH * HEIGHT * 4 * 1;
+  void *fake_frame = g_malloc(bufsize);
 
-  void *frame = g_malloc(bufsize);
-  GstBuffer *buffer = gst_buffer_new_allocate(NULL, bufsize, NULL);
+  memset(fake_frame, 0, bufsize); // gray
+  // memset(fake_frame, 0, bufsize); // trans?
+  while (!gl_get_frame(context->gl_context, fake_frame)) {
+    Sleep(10);
+  }
 
-  gst_buffer_fill(buffer, 0, frame, bufsize);
+  gst_buffer_fill(buf, 0, fake_frame, bufsize);
 
-  *buf = buffer;
-
-  g_free(frame);
+  g_free(fake_frame);
   return GST_FLOW_OK;
 }
 

@@ -20,11 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\d3d_chocobo.cc" />
+    <ClCompile Include="..\src\gl_context.cc" />
     <ClCompile Include="..\src\gst_chocobo_push_src.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\d3d_chocobo.h" />
+    <ClInclude Include="..\src\gl_context.h" />
     <ClInclude Include="..\src\gst_chocobo_push_src.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

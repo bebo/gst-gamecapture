@@ -1,9 +1,8 @@
 #ifndef D3D_CHOCOBO_H_
 #define D3D_CHOCOBO_H_
 
-#include <d3d11.h>
-#include <dxgi.h>
 #include <gst/gst.h>
+#include "gl_context.h"
 
 #ifdef __cplusplus 
 extern "C" {
@@ -11,10 +10,13 @@ extern "C" {
 
 GST_EXPORT GstDebugCategory *gst_chocobopushsrc_debug;
 #define GST_CAT_DEFAULT gst_chocobopushsrc_debug
-  
 
-void init_gl();
-void d3d11_create_device();
+typedef struct _Chocobo Chocobo;
+struct _Chocobo {
+  GLContext* gl_context;
+};
+
+void* d3d11_create_device();
 
 #ifdef __cplusplus
 }
