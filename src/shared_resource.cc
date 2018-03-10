@@ -190,37 +190,36 @@ static void init_gl_context(SharedResource* resource, GstGLContext* gl_context) 
 void shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
 
-  // dispose leftover stuffs
-  // gst_gl_context_clear_shader (gl_context);
-  // gl->BindTexture (GL_TEXTURE_2D, 0);
-
   // start new shits
-  gl->ClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+  gl->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   gl->Clear(GL_COLOR_BUFFER_BIT);
 
-  gst_gl_shader_use (resource->display_shader);
+  gl->Enable(GL_BLEND);
+  gl->BlendFunc(GL_ONE, GL_ONE);
+
+  gst_gl_shader_use(resource->display_shader);
+  gst_gl_shader_set_uniform_1i (resource->display_shader, "tex", 0);
 
   if (gl->GenVertexArrays) {
       gl->BindVertexArray (resource->vao);
   }
   _bind_buffer (resource, gl);
 
-  wglDXLockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
-
   gl->ActiveTexture (GL_TEXTURE0);
-  gl->BindTexture (GL_TEXTURE_2D, resource->gl_texture);
-  gst_gl_shader_set_uniform_1i (resource->display_shader, "tex", 0);
+  gl->BindTexture(GL_TEXTURE_2D, resource->gl_texture);
 
-  gl->DrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
+  wglDXLockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
+  gl->DrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
   wglDXUnlockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
 
   gl->BindTexture (GL_TEXTURE_2D, 0);
+
   gst_gl_context_clear_shader (gl_context);
 
   if (gl->GenVertexArrays) {
     gl->BindVertexArray (0);
   }
+
   _unbind_buffer (resource, gl);
 }
 
@@ -233,17 +232,14 @@ void* init_shared_resource(GstGLContext *gl_context, HANDLE shtex_handle) {
   resource->draw_frame = shared_resource_draw_frame;
 
   init_wgl_functions(gl_context);
-
-  // init display shader
   init_display_shader(resource, gl_context);
-
-  // d3d
   init_d3d_context(resource, shtex_handle);
-
-  // gl
   init_gl_context(resource, gl_context);
 
   return resource;
 }
 
-
+void free_shared_resource(SharedResource* resource) {
+  // WHY CRASH?
+   // wglDXCloseDeviceNV(resource->d3d_device);
+}

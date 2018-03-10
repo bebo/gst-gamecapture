@@ -38,6 +38,7 @@ struct _SharedResource {
 } ;
 
 void* init_shared_resource(GstGLContext *gl_context, HANDLE shtex_handle);
+void free_shared_resource(SharedResource *resource);
 
 #ifdef __cplusplus
 }

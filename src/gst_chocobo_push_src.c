@@ -115,8 +115,8 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 
   gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_set_caps);
   gstbasesrc_class->is_seekable = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_is_seekable);
-  gstbasesrc_class->unlock = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock);
-  gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
+  // gstbasesrc_class->unlock = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock);
+  // gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
   gstbasesrc_class->start = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_start);
   gstbasesrc_class->stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_stop);
   gstbasesrc_class->fixate = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fixate);
@@ -254,12 +254,33 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
   return TRUE;
 }
 
+static void 
+gst_chocobopushsrc_gl_stop(GstGLContext* context,
+    GstChocoboPushSrc* src) {
+  if (src->fbo) {
+    gst_object_unref (src->fbo);
+  }
+  src->fbo = NULL;
+
+  free_shared_resource(src->shared_resource);
+}
+
 static gboolean
 gst_chocobopushsrc_stop(GstBaseSrc *bsrc)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
 
   GST_DEBUG_OBJECT(bsrc, "Stop() called");
+
+  if (src->context) {
+    gst_gl_context_thread_add(src->context,
+        (GstGLContextThreadFunc) gst_chocobopushsrc_gl_stop, src);
+  }
+
+  if (src->context) {
+    gst_object_unref (src->context);
+  }
+  src->context = NULL;
 
   return TRUE;
 }
@@ -330,8 +351,6 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     if (G_UNLIKELY (GST_VIDEO_INFO_FPS_N (&src->out_info) == 0
           && src->n_frames == 1))
     goto eos;
-
-  src->current_buffer = buffer; // JAKE WTF?
 
   if (!gst_video_frame_map (&out_frame,
         &src->out_info, buffer,
@@ -449,11 +468,7 @@ _find_local_gl_context(GstChocoboPushSrc *src)
 static gboolean
 _gl_context_init_shader(GstChocoboPushSrc *src) 
 {
-  if (gst_gl_context_get_gl_api(src->context)) {
-
-  }
-
-  return TRUE;
+  return gst_gl_context_get_gl_api(src->context);
 }
 
 

@@ -51,9 +51,7 @@ struct _GstChocoboPushSrc
     GstVideoInfo out_info;
     GstGLFramebuffer *fbo;
     GstGLMemory *out_tex;
-    GstGLShader *shader;
     GstBufferPool *pool;
-    GstBuffer *current_buffer;
     GstGLDisplay *display;
     GstGLContext *context, *other_context;
     gint64 timestamp_offset;              /* base offset */
