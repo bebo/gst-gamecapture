@@ -21,13 +21,10 @@
     <ClInclude Include="..\src\gst_chocobo_push_src.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\d3d_chocobo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\gl_context.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\shared_resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\game_capture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,13 +32,10 @@
     <ClCompile Include="..\src\gst_chocobo_push_src.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\d3d_chocobo.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\gl_context.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\shared_resource.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\game_capture.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

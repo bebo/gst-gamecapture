@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,15 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\d3d_chocobo.cc" />
-    <ClCompile Include="..\src\gl_context.cc" />
+    <ClCompile Include="..\src\game_capture.cc" />
     <ClCompile Include="..\src\gst_chocobo_push_src.c" />
     <ClCompile Include="..\src\shared_resource.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\config.h" />
-    <ClInclude Include="..\src\d3d_chocobo.h" />
-    <ClInclude Include="..\src\gl_context.h" />
+    <ClInclude Include="..\src\game_capture.h" />
     <ClInclude Include="..\src\gst_chocobo_push_src.h" />
     <ClInclude Include="..\src\shared_resource.h" />
   </ItemGroup>
@@ -41,28 +39,28 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -105,12 +103,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)baseclasses;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;GLEW_STATIC;HAVE_CONFIG_H;CMAKE_INTDIR="Debug";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party\ipc-util;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_UNICODE;HAVE_CONFIG_H;CMAKE_INTDIR="Debug";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)third_party\lib\gst;$(SolutionDir)third_party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -118,12 +116,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)baseclasses;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;GLEW_STATIC;HAVE_CONFIG_H;CMAKE_INTDIR="Debug";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party\ipc-util;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_UNICODE;HAVE_CONFIG_H;CMAKE_INTDIR="Debug";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)third_party\lib\gst;$(SolutionDir)third_party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,14 +131,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)baseclasses;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;GLEW_STATIC;NDEBUG;HAVE_CONFIG_H;CMAKE_INTDIR="Release";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party\ipc-util;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_UNICODE;NDEBUG;HAVE_CONFIG_H;CMAKE_INTDIR="Release";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)third_party\lib\gst;$(SolutionDir)third_party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -150,14 +148,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)baseclasses;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;GLEW_STATIC;NDEBUG;HAVE_CONFIG_H;CMAKE_INTDIR="Release";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)third_party\ipc-util;$(SolutionDir)third_party\include\gstreamer-1.0;$(SolutionDir)third_party\include;$(SolutionDir)third_party\include\gst;$(SolutionDir)third_party\include\glib-2.0;$(SolutionDir)third_party\lib\glib-2.0\include;$(SolutionDir)third_party\lib\gstreamer-1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_UNICODE;NDEBUG;HAVE_CONFIG_H;CMAKE_INTDIR="Release";libgstdshowvideosink_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)third_party\lib\gst;$(SolutionDir)third_party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

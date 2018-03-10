@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="d3d8-api">
+      <UniqueIdentifier>{f32f40a4-77ac-4742-9d2c-eba20be8b0bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gamecapture">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="inject-helper">
+      <UniqueIdentifier>{525ab5eb-09b8-4bec-ba97-fff1a3074efa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="windows">
+      <UniqueIdentifier>{c8cda814-9eb0-49b1-a3c5-a7eb8baa3c02}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="inject-helper\inject-helper.c">
+      <Filter>inject-helper</Filter>
+    </ClCompile>
+    <ClCompile Include="app-helpers.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="base.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="bmem.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="config-file.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="dstr.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="inject-library.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="lexer.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="obfuscate.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="platform.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="platform-windows.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="threading-windows.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="utf8.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="window-helpers.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="pipe-windows.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+    <ClCompile Include="load-graphics-offsets.c">
+      <Filter>gamecapture</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="d3d8-api\d3d8.h">
+      <Filter>d3d8-api</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d8-api\d3d8caps.h">
+      <Filter>d3d8-api</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d8-api\d3d8types.h">
+      <Filter>d3d8-api</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\ComPtr.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\CoTaskMemPtr.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\HRError.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\WinHandle.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\win-version.h">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="app-helpers.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="base.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="bmem.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="c99defs.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="config-file.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="darray.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="dstr.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="dstr.hpp">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics-hook-info.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="hook-helpers.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="inject-library.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="lexer.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="nt-stuff.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="obfuscate.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="threading.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="threading-windows.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="utf8.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="window-helpers.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+    <ClInclude Include="pipe.h">
+      <Filter>gamecapture</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

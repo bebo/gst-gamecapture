@@ -28,6 +28,7 @@
 #include <gst/video/video.h>
 
 #include "shared_resource.h"
+#include "game_capture.h"
 
 G_BEGIN_DECLS
 
@@ -46,6 +47,9 @@ struct _GstChocoboPushSrc
     GstPushSrc         src;
 
     SharedResource     *shared_resource;
+    void*               shtex_handle; /*HANDLE*/
+    void               *game_context;
+    GameCaptureConfig  *game_capture_config;
     GstCaps            *supported_caps;
 
     GstVideoInfo out_info;
@@ -60,8 +64,10 @@ struct _GstChocoboPushSrc
     gboolean negotiated;
 
     /* properties */
-    /*HANDLE*/ void* shtex_handle;
-
+    GString  *gc_class_name;
+    GString  *gc_window_name;
+    GString  *gc_inject_dll_path;
+    gboolean gc_anti_cheat;
 };
 
 struct _GstChocoboPushSrcClass

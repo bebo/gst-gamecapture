@@ -21,6 +21,7 @@
 #endif
 
 #include "gst_chocobo_push_src.h"
+#include <stdbool.h>
 
 #define ELEMENT_NAME  "chocobopushsrc"
 #define USE_PEER_BUFFERALLOC
@@ -29,15 +30,20 @@
 #define DEFAULT_WIDTH 1280
 #define DEFAULT_HEIGHT 720
 #define DEFAULT_FPS 30
+#define UNITS 10000000
+
+extern bool load_graphics_offsets(bool is32bit);
 
 enum
 {
   PROP_0,
-  PROP_SHTEX_HANDLE,
+  PROP_CLASS_NAME,
+  PROP_WINDOW_NAME,
+  PROP_INJECT_DLL_PATH,
+  PROP_ANTI_CHEAT,
   PROP_LAST
 };
 
-#if 1
 static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
@@ -48,13 +54,6 @@ static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE("src",
         "framerate = " GST_VIDEO_FPS_RANGE ","
         "texture-target = (string) 2D")
     );
-#else
-static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE("src",
-    GST_PAD_SRC,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS(VTS_VIDEO_CAPS)
-    );
-#endif
 
 GST_DEBUG_CATEGORY(gst_chocobopushsrc_debug);
 #define GST_CAT_DEFAULT gst_chocobopushsrc_debug
@@ -125,9 +124,21 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 
   gstpushsrc_class->fill = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fill);
 
-   g_object_class_install_property (gobject_class, PROP_SHTEX_HANDLE,
-      g_param_spec_string ("shtex-handle", "shtex-handle", "shared texture handle",
+  g_object_class_install_property (gobject_class, PROP_CLASS_NAME,
+      g_param_spec_string ("class-name", "class-name", "window class name to capture",
         "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)); 
+
+  g_object_class_install_property (gobject_class, PROP_WINDOW_NAME,
+      g_param_spec_string ("window-name", "window-name", "window name to capture",
+        "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)); 
+
+  g_object_class_install_property (gobject_class, PROP_INJECT_DLL_PATH,
+      g_param_spec_string ("inject-dll-path", "inject-dll-path", "path to game capture inject dlls",
+        "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)); 
+
+  g_object_class_install_property (gobject_class, PROP_ANTI_CHEAT,
+      g_param_spec_boolean ("anti-cheat", "anti-cheat", "path to game capture inject dlls",
+        TRUE, G_PARAM_READWRITE)); 
 
   gst_element_class_set_static_metadata(gstelement_class,
       "Chocobo video src", "Src/Video",
@@ -137,12 +148,22 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
   gst_element_class_add_static_pad_template(gstelement_class, &src_template);
 }
 
+
 static void
 gst_chocobopushsrc_init(GstChocoboPushSrc *src)
 {
   GST_DEBUG_OBJECT(src, " ");
 
-//  src->timestamp_offset = 0;
+  GST_INFO("load_graphics_offsets 32bits success: %d", load_graphics_offsets(true));
+  GST_INFO("load_graphics_offsets 64bits success: %d", load_graphics_offsets(false));
+
+  src->shtex_handle = 0;
+  src->shared_resource = NULL;
+  src->game_context = NULL;
+  src->game_capture_config = g_new0(GameCaptureConfig, 1);
+  src->gc_class_name = g_string_new(NULL);
+  src->gc_window_name = g_string_new(NULL);
+  src->gc_inject_dll_path = g_string_new(NULL);
 
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
@@ -173,16 +194,29 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
   GstChocoboPushSrc *src = GST_CHOCOBO(object);
 
   switch (prop_id) {
-    case PROP_SHTEX_HANDLE:
-      {
-        const gchar *handle_str = g_value_get_string (value);
-        char *ptr;
-        src->shtex_handle = strtoull(handle_str, &ptr, 10);
-        break;
-      }
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+  case PROP_CLASS_NAME:
+    {
+       g_string_assign(src->gc_class_name, g_value_get_string(value));
       break;
+    }
+  case PROP_WINDOW_NAME:
+    {
+      g_string_assign(src->gc_window_name, g_value_get_string(value));
+      break;
+    }
+  case PROP_INJECT_DLL_PATH:
+    {
+      g_string_assign(src->gc_inject_dll_path, g_value_get_string(value));
+      break;
+    }
+  case PROP_ANTI_CHEAT:
+    {
+      src->gc_anti_cheat = g_value_get_boolean(value);
+      break;
+    }
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+    break;
   }
 }
 
@@ -193,10 +227,24 @@ gst_chocobopushsrc_get_property(GObject *object, guint prop_id, GValue *value,
   GstChocoboPushSrc *src = GST_CHOCOBO(object);
 
   switch (prop_id) {
-    case PROP_SHTEX_HANDLE:
+    case PROP_CLASS_NAME:
       {
-        const gchar *str_shtex_handle = src->shtex_handle;
-        g_value_set_string(value, str_shtex_handle);
+        g_value_set_string(value, src->gc_class_name->str);
+        break;
+      }
+    case PROP_WINDOW_NAME:
+      {
+        g_value_set_string(value, src->gc_window_name->str);
+        break;
+      }
+    case PROP_INJECT_DLL_PATH:
+      {
+        g_value_set_string(value, src->gc_inject_dll_path->str);
+        break;
+      }
+    case PROP_ANTI_CHEAT:
+      {
+        g_value_set_boolean(value, src->gc_anti_cheat);
         break;
       }
     default:
@@ -247,6 +295,7 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
+ 
   src->running_time = 0;
   src->n_frames = 0;
   src->negotiated = FALSE;
@@ -262,7 +311,9 @@ gst_chocobopushsrc_gl_stop(GstGLContext* context,
   }
   src->fbo = NULL;
 
-  free_shared_resource(src->shared_resource);
+  if (src->shared_resource) {
+    free_shared_resource(src->shared_resource);
+  }
 }
 
 static gboolean
@@ -325,6 +376,16 @@ _draw_texture_callback(gpointer stuff)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(stuff);
 
+  if (!src->shared_resource) {
+    const GstGLFuncs* gl = src->context->gl_vtable;
+
+    // start new shits
+    gl->ClearColor(0.2f, 0.4f, 0.7f, 1.0f);
+    gl->Clear(GL_COLOR_BUFFER_BIT);
+
+    return TRUE;
+  }
+
   src->shared_resource->draw_frame(src->shared_resource, 
       src->context);
 
@@ -335,6 +396,38 @@ _draw_texture_callback(gpointer stuff)
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
+  if (!game_capture_is_ready(src->game_context)) {
+    const wchar_t* class_name = get_wc(src->gc_class_name->str);
+    const wchar_t* window_name = get_wc(src->gc_window_name->str);
+
+    src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
+    src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
+    src->game_capture_config->force_scaling = 1;
+    src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
+
+    // TODO: simply this below a little bit esp, fps
+    src->game_context = game_capture_start(&src->game_context,
+        class_name, window_name,
+        src->game_capture_config,
+        (UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100);
+
+    g_free(class_name);
+    g_free(window_name);
+  }
+
+  // check game_capture first to see if it's there
+  if (src->game_context) {
+    game_capture_tick(src->game_context);
+
+    void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
+
+    // TODO: cleanup needa clean
+    if (src->shtex_handle != gc_shtex_handle) {
+      src->shtex_handle = gc_shtex_handle;
+      src->shared_resource = init_shared_resource(src->context, src->shtex_handle);
+    }
+  }
+
   gboolean gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
       _draw_texture_callback, src);
 }
@@ -478,8 +571,6 @@ _src_generate_fbo_gl(GstGLContext *context, GstChocoboPushSrc *src)
   src->fbo = gst_gl_framebuffer_new_with_default_depth (src->context,
       GST_VIDEO_INFO_WIDTH (&src->out_info),
       GST_VIDEO_INFO_HEIGHT (&src->out_info));
-
-  src->shared_resource = init_shared_resource(src->context, src->shtex_handle);
 }
 
 static gboolean

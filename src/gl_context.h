@@ -1,4 +1,0 @@
-#ifndef CHOCOBO_GL_CONTEXT_H_
-#define CHOCOBO_GL_CONTEXT_H_
-
-#endif /* CHOCOBO_GL_CONTEXT_H_*/
