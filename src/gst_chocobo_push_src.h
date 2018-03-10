@@ -27,6 +27,8 @@
 #include <gst/video/gstvideometa.h>
 #include <gst/video/video.h>
 
+#include "shared_resource.h"
+
 G_BEGIN_DECLS
 
 #define GST_TYPE_CHOCOBO                     (gst_chocobopushsrc_get_type())
@@ -43,6 +45,7 @@ struct _GstChocoboPushSrc
 {
     GstPushSrc         src;
 
+    SharedResource     *shared_resource;
     GstCaps            *supported_caps;
 
     GstVideoInfo out_info;
@@ -58,26 +61,15 @@ struct _GstChocoboPushSrc
     gint64 n_frames;                      /* total frames sent */
     gboolean negotiated;
 
-    GRecMutex          lock;
+    /* properties */
+    /*HANDLE*/ void* shtex_handle;
+
 };
 
 struct _GstChocoboPushSrcClass
 {
     GstPushSrcClass parent_class;
-    GRecMutex       lock;
 };
-
-#if 1
-# define LOCK_SRC(src)          g_rec_mutex_lock(&src->lock);
-# define UNLOCK_SRC(src)        g_rec_mutex_unlock(&src->lock);
-# define LOCK_CLASS(obj, klass)   g_rec_mutex_lock(&klass->lock);
-# define UNLOCK_CLASS(obj, klass) g_rec_mutex_unlock(&klass->lock);
-#else
-# define LOCK_SRC(src)          GST_LOG_OBJECT(src, "SRC   LOCK"); g_rec_mutex_lock(&src->lock); GST_LOG_OBJECT(src, "SRC LOCKED");
-# define UNLOCK_SRC(src)        g_rec_mutex_unlock(&src->lock); GST_LOG_OBJECT(src, "SRC UNLOCKED");
-# define LOCK_CLASS(obj, klass)   GST_LOG_OBJECT(obj, "CLASS   LOCK"); g_rec_mutex_lock(&klass->lock); GST_LOG_OBJECT(obj, "CLASS LOCKED");
-# define UNLOCK_CLASS(obj, klass) g_rec_mutex_unlock(&klass->lock); GST_LOG_OBJECT(obj, "CLASS UNLOCKED");
-#endif
 
 GType    gst_chocobopushsrc_get_type(void);
 

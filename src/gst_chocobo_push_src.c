@@ -21,20 +21,19 @@
 #endif
 
 #include "gst_chocobo_push_src.h"
-#include "d3d_chocobo.h"
-#include "gl_context.h"
 
 #define ELEMENT_NAME  "chocobopushsrc"
 #define USE_PEER_BUFFERALLOC
 #define SUPPORTED_GL_APIS (GST_GL_API_OPENGL | GST_GL_API_OPENGL3 | GST_GL_API_GLES2)
 
-// FIXME
-#define WIDTH 1280
-#define HEIGHT 720
+#define DEFAULT_WIDTH 1280
+#define DEFAULT_HEIGHT 720
+#define DEFAULT_FPS 30
 
 enum
 {
   PROP_0,
+  PROP_SHTEX_HANDLE,
   PROP_LAST
 };
 
@@ -75,8 +74,6 @@ static GstStateChangeReturn gst_chocobopushsrc_change_state(GstElement *element,
 /* GstBaseSrc */
 static gboolean gst_chocobopushsrc_decide_allocation(GstBaseSrc *basesrc,
     GstQuery *query);
-static GstCaps *gst_chocobopushsrc_get_caps(GstBaseSrc *basesrc,
-    GstCaps *filter);
 static gboolean gst_chocobopushsrc_set_caps(GstBaseSrc *bsrc, GstCaps *caps);
 static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc * bsrc, GstCaps * caps);
 static gboolean gst_chocobopushsrc_start(GstBaseSrc *src);
@@ -99,8 +96,6 @@ static void _src_generate_fbo_gl(GstGLContext *context, GstChocoboPushSrc *src);
 G_DEFINE_TYPE_WITH_CODE(GstChocoboPushSrc, gst_chocobopushsrc, GST_TYPE_PUSH_SRC,
     _do_init);
 
-static void *chocobo_context;
-
 static void
 gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 {
@@ -118,7 +113,6 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
   gstelement_class->set_context = gst_chocobopushsrc_set_context;
   gstelement_class->change_state = gst_chocobopushsrc_change_state;
 
-  // gstbasesrc_class->get_caps = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_get_caps);
   gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_set_caps);
   gstbasesrc_class->is_seekable = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_is_seekable);
   gstbasesrc_class->unlock = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock);
@@ -131,14 +125,16 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 
   gstpushsrc_class->fill = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fill);
 
+   g_object_class_install_property (gobject_class, PROP_SHTEX_HANDLE,
+      g_param_spec_string ("shtex-handle", "shtex-handle", "shared texture handle",
+        "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)); 
+
   gst_element_class_set_static_metadata(gstelement_class,
       "Chocobo video src", "Src/Video",
       "Chocobo video renderer",
       "Jake Loo <dad@bebo.com>");
 
   gst_element_class_add_static_pad_template(gstelement_class, &src_template);
-
-  g_rec_mutex_init(&klass->lock);
 }
 
 static void
@@ -151,8 +147,6 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
-
-  g_rec_mutex_init(&src->lock);
 }
 
 /* GObject Functions */
@@ -169,8 +163,6 @@ gst_chocobopushsrc_finalize(GObject *gobject)
 
   gst_caps_replace(&src->supported_caps, NULL);
 
-  g_rec_mutex_clear(&src->lock);
-
   G_OBJECT_CLASS(gst_chocobopushsrc_parent_class)->finalize(gobject);
 }
 
@@ -181,6 +173,13 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
   GstChocoboPushSrc *src = GST_CHOCOBO(object);
 
   switch (prop_id) {
+    case PROP_SHTEX_HANDLE:
+      {
+        const gchar *handle_str = g_value_get_string (value);
+        char *ptr;
+        src->shtex_handle = strtoull(handle_str, &ptr, 10);
+        break;
+      }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
       break;
@@ -194,6 +193,12 @@ gst_chocobopushsrc_get_property(GObject *object, guint prop_id, GValue *value,
   GstChocoboPushSrc *src = GST_CHOCOBO(object);
 
   switch (prop_id) {
+    case PROP_SHTEX_HANDLE:
+      {
+        const gchar *str_shtex_handle = src->shtex_handle;
+        g_value_set_string(value, str_shtex_handle);
+        break;
+      }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
       break;
@@ -201,37 +206,6 @@ gst_chocobopushsrc_get_property(GObject *object, guint prop_id, GValue *value,
 }
 
 /* GstBaseSrcClass Functions */
-
-static GstCaps *
-gst_chocobopushsrc_get_caps(GstBaseSrc *basesrc, GstCaps *filter)
-{
-  GstChocoboPushSrc *src = GST_CHOCOBO(basesrc);
-  GstCaps *caps;
-
-  caps = gst_caps_new_simple ("video/x-raw",
-      "format", G_TYPE_STRING, "BGRA",
-      "framerate", GST_TYPE_FRACTION, 0, 1,
-      "pixel-aspect-ratio", GST_TYPE_FRACTION, 1, 1,
-      "width", G_TYPE_INT, WIDTH,
-      "height", G_TYPE_INT, HEIGHT,
-      NULL);
-
-#if 0
-  caps = d3d_supported_caps(src);
-  if (!caps)
-    caps = gst_pad_get_pad_template_caps(GST_VIDEO_src_PAD(src));
-
-  if (caps && filter) {
-    GstCaps *isect;
-    isect = gst_caps_intersect_full(filter, caps, GST_CAPS_INTERSECT_FIRST);
-    gst_caps_unref(caps);
-    caps = isect;
-  }
-#endif
-
-  return caps;
-}
-
 static gboolean
 gst_chocobopushsrc_set_caps(GstBaseSrc *bsrc, GstCaps *caps)
 {
@@ -252,9 +226,9 @@ static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc *bsrc, GstCaps *caps)
 
   structure = gst_caps_get_structure (caps, 0);
 
-  gst_structure_fixate_field_nearest_int (structure, "width", 1280);
-  gst_structure_fixate_field_nearest_int (structure, "height", 720);
-  gst_structure_fixate_field_nearest_fraction (structure, "framerate", 30, 1);
+  gst_structure_fixate_field_nearest_int (structure, "width", DEFAULT_WIDTH);
+  gst_structure_fixate_field_nearest_int (structure, "height", DEFAULT_HEIGHT);
+  gst_structure_fixate_field_nearest_fraction (structure, "framerate", DEFAULT_FPS, 1);
 
   caps = GST_BASE_SRC_CLASS (gst_chocobopushsrc_parent_class)->fixate (bsrc, caps);
 
@@ -272,8 +246,6 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
     return FALSE;
 
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
-
-  chocobo_context = d3d11_create_device();
 
   src->running_time = 0;
   src->n_frames = 0;
@@ -332,9 +304,8 @@ _draw_texture_callback(gpointer stuff)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(stuff);
 
-  Chocobo *context = (Chocobo*) chocobo_context;
-
-  gl_get_frame_gpu(context->gl_context, src->context, src->current_buffer);
+  src->shared_resource->draw_frame(src->shared_resource, 
+      src->context);
 
   return TRUE;
 }
@@ -351,8 +322,6 @@ static GstFlowReturn
 gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
-
-  Chocobo *context = (Chocobo*) chocobo_context;
 
   GstClockTime next_time;
   GstVideoFrame out_frame;
@@ -480,7 +449,11 @@ _find_local_gl_context(GstChocoboPushSrc *src)
 static gboolean
 _gl_context_init_shader(GstChocoboPushSrc *src) 
 {
-  return gst_gl_context_get_gl_api(src->context);
+  if (gst_gl_context_get_gl_api(src->context)) {
+
+  }
+
+  return TRUE;
 }
 
 
@@ -490,6 +463,8 @@ _src_generate_fbo_gl(GstGLContext *context, GstChocoboPushSrc *src)
   src->fbo = gst_gl_framebuffer_new_with_default_depth (src->context,
       GST_VIDEO_INFO_WIDTH (&src->out_info),
       GST_VIDEO_INFO_HEIGHT (&src->out_info));
+
+  src->shared_resource = init_shared_resource(src->context, src->shtex_handle);
 }
 
 static gboolean
