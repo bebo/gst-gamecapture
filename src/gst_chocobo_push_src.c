@@ -379,8 +379,8 @@ _draw_texture_callback(gpointer stuff)
   if (!src->shared_resource) {
     const GstGLFuncs* gl = src->context->gl_vtable;
 
-    // start new shits
-    gl->ClearColor(0.2f, 0.4f, 0.7f, 1.0f);
+    // TODO: what to do, when you dont have a frame from the game yet?
+    gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
     gl->Clear(GL_COLOR_BUFFER_BIT);
 
     return TRUE;
@@ -397,8 +397,8 @@ static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
   if (!game_capture_is_ready(src->game_context)) {
-    const wchar_t* class_name = get_wc(src->gc_class_name->str);
-    const wchar_t* window_name = get_wc(src->gc_window_name->str);
+    wchar_t* class_name = get_wc(src->gc_class_name->str);
+    wchar_t* window_name = get_wc(src->gc_window_name->str);
 
     src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
     src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);

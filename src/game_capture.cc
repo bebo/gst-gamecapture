@@ -946,7 +946,8 @@ void set_fps(void **data, uint64_t frame_interval) {
   gc->global_hook_info->frame_interval = frame_interval;
 }
 
-void* game_capture_start(void **data, wchar_t* window_class_name, wchar_t* window_name, 
+void* game_capture_start(void **data, 
+    wchar_t* window_class_name, wchar_t* window_name, 
     GameCaptureConfig *config, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
   if (gc == NULL) {
@@ -1119,7 +1120,7 @@ gboolean game_capture_stop(void **data) {
   return TRUE;
 }
 
-const wchar_t *get_wc(const char *c) {
+wchar_t *get_wc(const char *c) {
   const size_t c_size = strlen(c)+1;
   wchar_t* wc = (wchar_t*) g_malloc(c_size);
   mbstowcs (wc, c, c_size);
