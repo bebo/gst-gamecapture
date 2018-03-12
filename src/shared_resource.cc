@@ -113,15 +113,30 @@ static void init_display_shader(SharedResource* resource, GstGLContext* gl_conte
 
 
 static ID3D11Device* create_device_d3d11() {
-  ID3D11Device *device;
-  ID3D11DeviceContext *context;
-  //IDXGIAdapter *adapter;
+  ID3D11Device* device;
+  ID3D11DeviceContext* context;
+
+  IDXGIFactory1* factory;
+  HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**) &factory);
+
+  UINT index = 0;
+  IDXGIAdapter1* adapter;
+  while (factory->EnumAdapters1(index++, &adapter) == S_OK) {
+    DXGI_ADAPTER_DESC desc;
+    hr = adapter->GetDesc(&desc);
+
+    if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
+      adapter->Release();
+      continue;
+    }
+    break;
+  }
+  factory->Release();
 
   D3D_FEATURE_LEVEL level_used = D3D_FEATURE_LEVEL_9_3;
 
-  // FIXME: D3D11CreateDevice, NOT pass NULL as adapter
-  HRESULT hr = D3D11CreateDevice(NULL, 
-      D3D_DRIVER_TYPE_HARDWARE,
+  hr = D3D11CreateDevice(adapter, 
+      D3D_DRIVER_TYPE_UNKNOWN,
       NULL, 
       D3D11_CREATE_DEVICE_BGRA_SUPPORT, 
       d3d_feature_levels,
@@ -130,21 +145,22 @@ static ID3D11Device* create_device_d3d11() {
       &device,
       &level_used, 
       &context);
+
   GST_INFO("CreateDevice HR: 0x%08x, level_used: 0x%08x (%d)", hr,
       (unsigned int) level_used, (unsigned int) level_used);
-
   return device;
 }
 
 static void init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
   GST_INFO("init_d3d_context: %llu", shtex_handle);
+
   resource->d3d_device = create_device_d3d11();
   resource->d3d_shared_handle = shtex_handle;
 
   ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
   HRESULT hr = device->OpenSharedResource(shtex_handle,
       __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
-  GST_INFO("OpenSharedResource HR: 0x%08x", hr);
+  GST_ERROR("OpenSharedResource HR: 0x%08x", hr);
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {

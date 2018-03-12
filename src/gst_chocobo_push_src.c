@@ -148,14 +148,14 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
   gst_element_class_add_static_pad_template(gstelement_class, &src_template);
 }
 
-
 static void
 gst_chocobopushsrc_init(GstChocoboPushSrc *src)
 {
   GST_DEBUG_OBJECT(src, " ");
 
-  GST_INFO("load_graphics_offsets 32bits success: %d", load_graphics_offsets(true));
-  GST_INFO("load_graphics_offsets 64bits success: %d", load_graphics_offsets(false));
+  bool success_32 = load_graphics_offsets(true);
+  bool success_64 = load_graphics_offsets(false);
+  GST_INFO("load_graphics_offsets: 32bits: %d, 64bits: %d", success_32, success_64);
 
   src->shtex_handle = 0;
   src->shared_resource = NULL;
@@ -295,7 +295,6 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
- 
   src->running_time = 0;
   src->n_frames = 0;
   src->negotiated = FALSE;

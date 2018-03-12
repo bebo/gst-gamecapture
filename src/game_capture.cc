@@ -560,7 +560,6 @@ static inline bool inject_hook(struct game_capture *gc)
   char *inject_path;
   char *hook_path;
 
-  GST_INFO("JAKE");
   if (gc->process_is_64bit) {
     hook_dll = "graphics-hook64.dll";
     inject_path = bebo_find_file("inject-helper64.exe");
