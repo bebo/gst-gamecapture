@@ -783,7 +783,7 @@ static bool init_hook(struct game_capture *gc)
 
   blacklisted_process = is_blacklisted_exe(exe.array);
   if (blacklisted_process)
-    info("cannot capture %S due to being blacklisted", exe.array);
+    info("cannot capture %s due to being blacklisted", exe.array);
   dstr_free(&exe);
 
   if (blacklisted_process) {
@@ -946,12 +946,17 @@ void set_fps(void **data, uint64_t frame_interval) {
 }
 
 void* game_capture_start(void **data, 
-    wchar_t* window_class_name, wchar_t* window_name, 
+    char* window_class_name_c, char* window_name_c, 
     GameCaptureConfig *config, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
   if (gc == NULL) {
     HWND hwnd = NULL;
     window_priority priority = WINDOW_PRIORITY_EXE;
+
+    wchar_t* window_class_name = get_wc(window_class_name_c);
+    wchar_t* window_name = get_wc(window_name_c);
+
+    GST_INFO("game_capture_start: %s, %s", window_class_name_c, window_name_c);
 
     if (window_class_name != NULL && lstrlenW(window_class_name) > 0 &&
         window_name != NULL && lstrlenW(window_name) > 0) {
@@ -969,6 +974,9 @@ void* game_capture_start(void **data,
       hwnd = FindWindowW(NULL, window_name);
       priority = WINDOW_PRIORITY_TITLE;
     }
+
+    g_free(window_class_name);
+    g_free(window_name);
 
     if (hwnd == NULL) {
       return NULL;

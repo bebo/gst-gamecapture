@@ -151,7 +151,7 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 static void
 gst_chocobopushsrc_init(GstChocoboPushSrc *src)
 {
-  GST_DEBUG_OBJECT(src, " ");
+  GST_DEBUG_OBJECT(src, "init()");
 
   bool success_32 = load_graphics_offsets(true);
   bool success_64 = load_graphics_offsets(false);
@@ -177,7 +177,7 @@ gst_chocobopushsrc_finalize(GObject *gobject)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(gobject);
 
-  GST_DEBUG_OBJECT(src, " ");
+  GST_DEBUG_OBJECT(src, "finalize()");
 
   // gst_object_replace((GstObject **)& src->pool, NULL);
   // gst_object_replace((GstObject **)& src->fallback_pool, NULL);
@@ -396,9 +396,6 @@ static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
   if (!game_capture_is_ready(src->game_context)) {
-    wchar_t* class_name = get_wc(src->gc_class_name->str);
-    wchar_t* window_name = get_wc(src->gc_window_name->str);
-
     src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
     src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
     src->game_capture_config->force_scaling = 1;
@@ -406,12 +403,10 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 
     // TODO: simply this below a little bit esp, fps
     src->game_context = game_capture_start(&src->game_context,
-        class_name, window_name,
+        src->gc_class_name->str,
+        src->gc_window_name->str,
         src->game_capture_config,
         (UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100);
-
-    g_free(class_name);
-    g_free(window_name);
   }
 
   // check game_capture first to see if it's there

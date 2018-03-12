@@ -152,15 +152,13 @@ static ID3D11Device* create_device_d3d11() {
 }
 
 static void init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
-  GST_INFO("init_d3d_context: %llu", shtex_handle);
-
   resource->d3d_device = create_device_d3d11();
   resource->d3d_shared_handle = shtex_handle;
 
   ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
   HRESULT hr = device->OpenSharedResource(shtex_handle,
       __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
-  GST_ERROR("OpenSharedResource HR: 0x%08x", hr);
+  GST_ERROR("OpenSharedResource HR: 0x%08x, shtex: %llu", hr, shtex_handle);
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {

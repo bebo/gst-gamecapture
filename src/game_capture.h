@@ -39,12 +39,11 @@ struct _GameCaptureConfig {
 gboolean game_capture_is_ready(void * data);
 void* game_capture_get_shtex_handle(void * data);
 void* game_capture_start(void **data, 
-    wchar_t* window_class_name, wchar_t* window_name,
+    char* window_class_name, char* window_name,
     GameCaptureConfig *config, uint64_t frame_interval);
 gboolean game_capture_tick(void * data);
 gboolean game_capture_stop(void * data);
 void set_fps(void **data, uint64_t frame_interval);
-
 
 wchar_t *get_wc(const char *c);
 #ifdef __cplusplus
