@@ -37,7 +37,7 @@ if errorlevel 1 (
   exit /b %errorlevel%
 )
 
-set FILENAME=gst-chocobo_%TAG%.zip
+set FILENAME=gst-gamecapture_%TAG%.zip
 
 "C:\Program Files\7-Zip\7z.exe" a -r %FILENAME% -w .\dist\* -mem=AES256
 
@@ -45,4 +45,4 @@ if errorlevel 1 (
   exit /b %errorlevel%
 )
 
-"C:\Program Files\Amazon\AWSCLI\aws.exe" s3api put-object --bucket bebo-app --key repo/gst-chocobo/%FILENAME% --body %FILENAME%
+"C:\Program Files\Amazon\AWSCLI\aws.exe" s3api put-object --bucket bebo-app --key repo/gst-gamecapture/%FILENAME% --body %FILENAME%
