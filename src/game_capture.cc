@@ -980,8 +980,8 @@ void* game_capture_start(void **data,
       priority = WINDOW_PRIORITY_TITLE;
     }
 
-    g_free(window_class_name);
-    g_free(window_name);
+    delete[] window_class_name;
+    delete[] window_name;
 
     if (hwnd == NULL) {
       error("hwnd == null, window not found");
@@ -1133,8 +1133,8 @@ gboolean game_capture_stop(void **data) {
 }
 
 wchar_t *get_wc(const char *c) {
-  const size_t c_size = strlen(c)+1;
-  wchar_t* wc = (wchar_t*) g_malloc(c_size);
+  const size_t c_size = strlen(c) + 1;
+  wchar_t* wc = new wchar_t[c_size];
   mbstowcs (wc, c, c_size);
   return wc;
 }
