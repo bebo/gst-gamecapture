@@ -1133,9 +1133,9 @@ gboolean game_capture_stop(void **data) {
 }
 
 wchar_t *get_wc(const char *c) {
-  const size_t c_size = strlen(c) + 1;
-  wchar_t* wc = new wchar_t[c_size];
-  mbstowcs (wc, c, c_size);
+  int wc_size = MultiByteToWideChar(CP_UTF8, 0, c, strlen(c), NULL, 0);
+  wchar_t* wc = new wchar_t[wc_size];
+  MultiByteToWideChar(CP_UTF8, 0, c , strlen(c), wc, wc_size);
   return wc;
 }
 
