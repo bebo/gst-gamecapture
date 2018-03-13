@@ -301,7 +301,13 @@ gst_chocobopushsrc_gl_stop(GstGLContext* context,
   src->fbo = NULL;
 
   if (src->shared_resource) {
-    free_shared_resource(src->shared_resource);
+    free_shared_resource(context, src->shared_resource);
+    src->shared_resource = NULL;
+  }
+
+  if (src->game_context) {
+    game_capture_stop(src->game_context);
+    src->game_context = NULL;
   }
 }
 
@@ -320,6 +326,7 @@ gst_chocobopushsrc_stop(GstBaseSrc *bsrc)
   if (src->context) {
     gst_object_unref (src->context);
   }
+
   src->context = NULL;
 
   return TRUE;
@@ -365,32 +372,36 @@ _draw_texture_callback(gpointer stuff)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(stuff);
 
-  if (!src->shared_resource) {
-    const GstGLFuncs* gl = src->context->gl_vtable;
-
-    // TODO: what to do, when you dont have a frame from the game yet?
-    gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
-    gl->Clear(GL_COLOR_BUFFER_BIT);
-
-    return TRUE;
-  }
-
-  src->shared_resource->draw_frame(src->shared_resource, 
+  src->shared_resource->draw_frame(src->shared_resource,
       src->context);
 
   return TRUE;
 }
 
+static gboolean
+_draw_texture_callback_no_game_frame(gpointer stuff)
+{
+  GstChocoboPushSrc *src = GST_CHOCOBO(stuff);
 
+  const GstGLFuncs* gl = src->context->gl_vtable;
+
+  // TODO: what to do, when you dont have a frame from the game yet?
+  gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
+  gl->Clear(GL_COLOR_BUFFER_BIT);
+
+  return TRUE;
+}
+
+
+static volatile gboolean loaded = false;
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
-  static volatile gboolean loaded = false;
+  // TODO move this somewhere else, like start
   if (!loaded) {
     loaded = true;
     bool s32b = load_graphics_offsets(true);
     bool s64b = load_graphics_offsets(false);
-    // GST_INFO("load_graphics_offsets: 32bits: %d, 64bits: %d", success_32, success_64);
   }
 
   if (!game_capture_is_ready(src->game_context)) {
@@ -407,19 +418,43 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
         (UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100);
   }
 
-  // check game_capture first to see if it's there
-  if (src->game_context) {
-    game_capture_tick(src->game_context);
-    void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
+  gboolean gl_result = FALSE;
 
-    // TODO: cleanup needa clean
-    if (src->shtex_handle != gc_shtex_handle) {
-      src->shtex_handle = gc_shtex_handle;
-      src->shared_resource = init_shared_resource(src->context, gc_shtex_handle);
+  // check game_capture first to see if it's there
+  if (!src->game_context) {
+    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+        _draw_texture_callback_no_game_frame, src);
+    return;
+  }
+
+  if (game_capture_is_active(src->game_context) &&
+      !game_capture_tick(src->game_context)) {
+    src->game_context = NULL;
+    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+        _draw_texture_callback_no_game_frame, src);
+    return;
+  }
+
+  void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
+  if (!gc_shtex_handle) {
+    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+        _draw_texture_callback_no_game_frame, src);
+    return;
+  }
+
+  if (src->shtex_handle != gc_shtex_handle) {
+    src->shtex_handle = gc_shtex_handle;
+
+    if (!init_shared_resource(src->context, 
+          gc_shtex_handle, 
+          &src->shared_resource)) {
+      gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+          _draw_texture_callback_no_game_frame, src);
+      return;
     }
   }
 
-  gboolean gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+  gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
       _draw_texture_callback, src);
 }
 

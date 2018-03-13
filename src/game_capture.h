@@ -39,6 +39,7 @@ struct _GameCaptureConfig {
 };
 
 gboolean game_capture_is_ready(void * data);
+gboolean game_capture_is_active(void * data);
 void* game_capture_get_shtex_handle(void * data);
 void* game_capture_start(void **data, 
     char* window_class_name, char* window_name,

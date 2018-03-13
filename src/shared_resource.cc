@@ -114,7 +114,6 @@ static void init_display_shader(SharedResource* resource, GstGLContext* gl_conte
 
 static ID3D11Device* create_device_d3d11() {
   ID3D11Device* device;
-  ID3D11DeviceContext* context;
 
   IDXGIFactory1* factory;
   HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**) &factory);
@@ -144,21 +143,23 @@ static ID3D11Device* create_device_d3d11() {
       D3D11_SDK_VERSION,
       &device,
       &level_used, 
-      &context);
+      NULL);
+  adapter->Release();
 
   //GST_INFO("CreateDevice HR: 0x%08x, level_used: 0x%08x (%d)", hr,
   //    (unsigned int) level_used, (unsigned int) level_used);
   return device;
 }
 
-static void init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
+static gboolean init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
   resource->d3d_device = create_device_d3d11();
   resource->d3d_shared_handle = shtex_handle;
 
   ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
   HRESULT hr = device->OpenSharedResource(shtex_handle,
       __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
-  // GST_ERROR("OpenSharedResource HR: 0x%08x, shtex: %llu", hr, shtex_handle);
+
+  return (hr == S_OK);
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {
@@ -201,7 +202,8 @@ static void init_gl_context(SharedResource* resource, GstGLContext* gl_context) 
   create_gl_texture(resource, gl_context);
 }
 
-void shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
+static void
+shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
 
   // start new shits
@@ -237,7 +239,8 @@ void shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_conte
   _unbind_buffer (resource, gl);
 }
 
-void* init_shared_resource(GstGLContext *gl_context, HANDLE shtex_handle) {
+gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
+    void** resource_out) {
 #if 0
   GST_INFO("VENDOR : %s", glGetString(GL_VENDOR));
   GST_INFO("RENDERER : %s", glGetString(GL_RENDERER));
@@ -249,13 +252,50 @@ void* init_shared_resource(GstGLContext *gl_context, HANDLE shtex_handle) {
 
   init_wgl_functions(gl_context);
   init_display_shader(resource, gl_context);
-  init_d3d_context(resource, shtex_handle);
+
+  if (!init_d3d_context(resource, shtex_handle)) {
+    free_shared_resource(gl_context, resource);
+    return FALSE;
+  }
+
   init_gl_context(resource, gl_context);
 
-  return resource;
+  *resource_out = resource;
+  return TRUE;
 }
 
-void free_shared_resource(SharedResource* resource) {
-  // WHY CRASH?
-   // wglDXCloseDeviceNV(resource->d3d_device);
+// must be called on gl thread
+void free_shared_resource(GstGLContext* gl_context, SharedResource* resource) {
+  const GstGLFuncs* gl = gl_context->gl_vtable;
+
+  if (resource->gl_device_handle) {
+    if (resource->gl_texture) {
+      wglDXUnregisterObjectNV(resource->gl_device_handle, 
+          resource->gl_texture_handle);
+    }
+
+    wglDXCloseDeviceNV(resource->gl_device_handle);
+  }
+
+  if (resource->d3d_device) {
+    ((ID3D11Device*) resource->d3d_device)->Release();
+  }
+
+  if (resource->display_shader) {
+    gst_object_unref(resource->display_shader);
+  }
+
+  if (resource->vertex_buffer) {
+    gl->DeleteBuffers(1, &resource->vertex_buffer);
+  }
+
+  if (resource->vbo_indices) {
+    gl->DeleteBuffers(1, &resource->vbo_indices);
+  }
+
+  if (resource->vao) {
+    gl->DeleteVertexArrays(1, &resource->vao);
+  }
+
+  g_free(resource);
 }

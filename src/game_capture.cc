@@ -881,6 +881,7 @@ static void stop_capture(struct game_capture *gc)
     gc->retrying--;
 }
 
+
 static void try_hook(struct game_capture *gc)
 {
   if (0 && gc->config.mode == CAPTURE_MODE_ANY) {
@@ -923,6 +924,15 @@ gboolean game_capture_is_ready(void * data) {
 
   struct game_capture *gc = (game_capture *)data;
   return gc->active && !gc->retrying;
+}
+
+gboolean game_capture_is_active(void * data) {
+  if (data == NULL) {
+    return FALSE;
+  }
+
+  struct game_capture *gc = (game_capture *)data;
+  return gc->active;
 }
 
 void* game_capture_get_shtex_handle(void * data) {
@@ -1120,15 +1130,18 @@ gboolean game_capture_tick(void * data) {
       info("capture window no longer exists, "
           "terminating capture");
       stop_capture(gc);
+      g_free(gc);
+      return FALSE;
     }
   }
 
-  return FALSE;
+  return TRUE;
 }
 
-gboolean game_capture_stop(void **data) {
-  struct game_capture *gc = (game_capture *)*data;
+gboolean game_capture_stop(void *data) {
+  struct game_capture *gc = (game_capture*) data;
   stop_capture(gc);
+  g_free(gc);
   return TRUE;
 }
 

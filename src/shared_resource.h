@@ -36,11 +36,12 @@ struct _SharedResource {
   GLint        attr_position;
   GLint        attr_texture;
 
-  void (*draw_frame)(SharedResource *resource, GstGLContext* gl_context);
-} ;
+  void (*draw_frame)(SharedResource* resource, GstGLContext* gl_context);
+};
 
-void* init_shared_resource(GstGLContext *gl_context, HANDLE shtex_handle);
-void free_shared_resource(SharedResource *resource);
+gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
+    void** resource);
+void free_shared_resource(GstGLContext* gl_context, SharedResource* resource);
 
 #ifdef __cplusplus
 }
