@@ -24,8 +24,8 @@
 #include <stdbool.h>
 
 #define ELEMENT_NAME  "gamecapture"
-#define USE_PEER_BUFFERALLOC
-#define SUPPORTED_GL_APIS (GST_GL_API_OPENGL | GST_GL_API_OPENGL3 | GST_GL_API_GLES2)
+#define SUPPORTED_GL_APIS (GST_GL_API_OPENGL3)
+// GST_GL_API_OPENGL | GST_GL_API_GLES2
 
 #define DEFAULT_WIDTH 1280
 #define DEFAULT_HEIGHT 720
@@ -150,13 +150,7 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 
 static void
 gst_chocobopushsrc_init(GstChocoboPushSrc *src)
-{
-  GST_DEBUG_OBJECT(src, "init()");
-
-  bool success_32 = load_graphics_offsets(true);
-  bool success_64 = load_graphics_offsets(false);
-  GST_INFO("load_graphics_offsets: 32bits: %d, 64bits: %d", success_32, success_64);
-
+{ 
   src->shtex_handle = 0;
   src->shared_resource = NULL;
   src->game_context = NULL;
@@ -177,8 +171,6 @@ gst_chocobopushsrc_finalize(GObject *gobject)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(gobject);
 
-  GST_DEBUG_OBJECT(src, "finalize()");
-
   // gst_object_replace((GstObject **)& src->pool, NULL);
   // gst_object_replace((GstObject **)& src->fallback_pool, NULL);
 
@@ -196,7 +188,7 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
   switch (prop_id) {
   case PROP_CLASS_NAME:
     {
-       g_string_assign(src->gc_class_name, g_value_get_string(value));
+      g_string_assign(src->gc_class_name, g_value_get_string(value));
       break;
     }
   case PROP_WINDOW_NAME:
@@ -267,8 +259,6 @@ gst_chocobopushsrc_set_caps(GstBaseSrc *bsrc, GstCaps *caps)
 static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc *bsrc, GstCaps *caps) 
 {
   GstStructure *structure;
-
-  GST_DEBUG ("fixate");
 
   caps = gst_caps_make_writable (caps);
 
@@ -395,6 +385,14 @@ _draw_texture_callback(gpointer stuff)
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
+  static volatile gboolean loaded = false;
+  if (!loaded) {
+    loaded = true;
+    bool s32b = load_graphics_offsets(true);
+    bool s64b = load_graphics_offsets(false);
+    // GST_INFO("load_graphics_offsets: 32bits: %d, 64bits: %d", success_32, success_64);
+  }
+
   if (!game_capture_is_ready(src->game_context)) {
     src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
     src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
@@ -412,13 +410,12 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
   // check game_capture first to see if it's there
   if (src->game_context) {
     game_capture_tick(src->game_context);
-
     void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
 
     // TODO: cleanup needa clean
     if (src->shtex_handle != gc_shtex_handle) {
       src->shtex_handle = gc_shtex_handle;
-      src->shared_resource = init_shared_resource(src->context, src->shtex_handle);
+      src->shared_resource = init_shared_resource(src->context, gc_shtex_handle);
     }
   }
 
@@ -442,8 +439,6 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   if (!gst_video_frame_map (&out_frame,
         &src->out_info, buffer,
         GST_MAP_WRITE | GST_MAP_GL)) {
-
-    GST_INFO("FAILED TO NEGOTIATED");
 
     return GST_FLOW_NOT_NEGOTIATED;
   }

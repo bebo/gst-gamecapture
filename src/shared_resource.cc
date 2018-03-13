@@ -146,8 +146,8 @@ static ID3D11Device* create_device_d3d11() {
       &level_used, 
       &context);
 
-  GST_INFO("CreateDevice HR: 0x%08x, level_used: 0x%08x (%d)", hr,
-      (unsigned int) level_used, (unsigned int) level_used);
+  //GST_INFO("CreateDevice HR: 0x%08x, level_used: 0x%08x (%d)", hr,
+  //    (unsigned int) level_used, (unsigned int) level_used);
   return device;
 }
 
@@ -158,7 +158,7 @@ static void init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
   ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
   HRESULT hr = device->OpenSharedResource(shtex_handle,
       __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
-  GST_ERROR("OpenSharedResource HR: 0x%08x, shtex: %llu", hr, shtex_handle);
+  // GST_ERROR("OpenSharedResource HR: 0x%08x, shtex: %llu", hr, shtex_handle);
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {
@@ -166,7 +166,7 @@ static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context
 
   BOOL success = wglDXSetResourceShareHandleNV(resource->d3d_texture,
       resource->d3d_shared_handle);
-  GST_INFO("wglDXSetResourceShareHandleNV success: %d", success != FALSE);
+  // GST_INFO("wglDXSetResourceShareHandleNV success: %d", success != FALSE);
 
   gl->GenTextures(1, &resource->gl_texture);
   if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
@@ -174,8 +174,8 @@ static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context
   resource->gl_texture_handle = wglDXRegisterObjectNV(resource->gl_device_handle,
       resource->d3d_texture, resource->gl_texture,
       GL_TEXTURE_2D, WGL_ACCESS_READ_WRITE_NV);
-  GST_INFO("wglDXRegisterObjectNV texture handle: %llu texture: %llu", 
-      resource->gl_texture_handle, resource->gl_texture);
+  // GST_INFO("wglDXRegisterObjectNV texture handle: %llu texture: %llu", 
+  //   resource->gl_texture_handle, resource->gl_texture);
 
   gl->BindTexture(GL_TEXTURE_2D, resource->gl_texture);
   if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
@@ -238,9 +238,11 @@ void shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_conte
 }
 
 void* init_shared_resource(GstGLContext *gl_context, HANDLE shtex_handle) {
+#if 0
   GST_INFO("VENDOR : %s", glGetString(GL_VENDOR));
   GST_INFO("RENDERER : %s", glGetString(GL_RENDERER));
   GST_INFO("VERSION : %s", glGetString(GL_VERSION));
+#endif
 
   SharedResource* resource = g_new0(SharedResource, 1);
   resource->draw_frame = shared_resource_draw_frame;

@@ -24,10 +24,17 @@
   "that the Bebo Capture installation folder is excluded/ignored in the " \
   "settings of the security software you are using."
 
+#if 0
 #define debug(...) GST_INFO(__VA_ARGS__)
 #define info(...) GST_INFO(__VA_ARGS__)
 #define warn(...) GST_WARNING(__VA_ARGS__)
 #define error(...) GST_ERROR(__VA_ARGS__)
+#else
+#define debug(...)
+#define info(...)
+#define warn(...)
+#define error(...)
+#endif
 
 extern "C" {
   struct graphics_offsets offsets32 = { 0 };
@@ -176,7 +183,7 @@ static inline HANDLE open_hook_info(struct game_capture *gc)
 
 static struct game_capture *game_capture_create(GameCaptureConfig *config, uint64_t frame_interval)
 {
-  struct game_capture *gc = (struct game_capture*) bzalloc(sizeof(*gc));
+  struct game_capture *gc = (struct game_capture*) g_new0(game_capture, 1);
 
   gc->config.priority = config->priority;
   gc->config.mode = config->mode;
@@ -362,7 +369,7 @@ static inline bool hook_direct(struct game_capture *gc,
 
   process = open_process(PROCESS_ALL_ACCESS, false, gc->process_id);
   if (!process) {
-    warn("hook_direct: could not open process: %S (%lu) %S, %S",
+    warn("hook_direct: could not open process: %s (%lu) %s, %s",
         gc->config.executable, GetLastError(), gc->config.title, gc->config.klass);
     return false;
   }
@@ -371,7 +378,7 @@ static inline bool hook_direct(struct game_capture *gc,
   CloseHandle(process);
 
   if (ret != 0) {
-    error("hook_direct: inject failed: %d, anti_cheat: %d, %S, %S, %S", ret, gc->config.anticheat_hook, gc->config.title, gc->config.klass, gc->config.executable);
+    error("hook_direct: inject failed: %d, anti_cheat: %d, %s, %s, %s", ret, gc->config.anticheat_hook, gc->config.title, gc->config.klass, gc->config.executable);
     if (ret == INJECT_ERROR_UNLIKELY_FAIL) {
       inject_failed_count++;
     }
@@ -542,7 +549,7 @@ static inline bool create_inject_process(struct game_capture *gc,
     gc->injector_process = pi.hProcess;
   }
   else {
-    warn("Failed to create inject helper process: %S (%lu)",
+    warn("Failed to create inject helper process: %s (%lu)",
         gc->config.executable, GetLastError());
   }
 
@@ -956,8 +963,6 @@ void* game_capture_start(void **data,
     wchar_t* window_class_name = get_wc(window_class_name_c);
     wchar_t* window_name = get_wc(window_name_c);
 
-    GST_INFO("game_capture_start: %s, %s", window_class_name_c, window_name_c);
-
     if (window_class_name != NULL && lstrlenW(window_class_name) > 0 &&
         window_name != NULL && lstrlenW(window_name) > 0) {
       hwnd = FindWindowW(window_class_name, window_name);
@@ -979,6 +984,7 @@ void* game_capture_start(void **data,
     g_free(window_name);
 
     if (hwnd == NULL) {
+      error("hwnd == null, window not found");
       return NULL;
     }
 
@@ -996,7 +1002,6 @@ void* game_capture_start(void **data,
     gc->config.executable = _strdup(exe->array);
     gc->config.title = _strdup(title->array);
     gc->config.klass = _strdup(klass->array);;
-
     gc->priority = priority;
   }
 
@@ -1060,7 +1065,7 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
-  GST_INFO("init_shtex_capture: %llu", gc->shtex_data->tex_handle);
+  // GST_INFO("init_shtex_capture: %llu", gc->shtex_data->tex_handle);
   return true;
 }
 
