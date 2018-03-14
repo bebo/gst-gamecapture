@@ -407,8 +407,6 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
     src->game_capture_config->force_scaling = 1;
     src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
 
-    // TODO: simply this below a little bit esp, fps
-    // GST_INFO("game_capture_start, class_name: %s (%d), window_name: %s (%d)", src->gc_class_name->str, strlen(src->gc_class_name->str), src->gc_window_name->str, strlen(src->gc_window_name->str));
     src->game_context = game_capture_start(&src->game_context,
         src->gc_class_name->str,
         src->gc_window_name->str,

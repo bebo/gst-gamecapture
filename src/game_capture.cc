@@ -993,8 +993,6 @@ void* game_capture_start(void **data,
     delete[] window_name;
 
     if (hwnd == NULL) {
-      error("hwnd == null, window not found. class_name: %s, window_name: %s", 
-          window_class_name_c, window_name_c);
       return NULL;
     }
 
