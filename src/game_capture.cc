@@ -24,7 +24,7 @@
   "that the Bebo Capture installation folder is excluded/ignored in the " \
   "settings of the security software you are using."
 
-#if 0
+#if 1
 #define debug(...) GST_INFO(__VA_ARGS__)
 #define info(...) GST_INFO(__VA_ARGS__)
 #define warn(...) GST_WARNING(__VA_ARGS__)
@@ -972,19 +972,19 @@ void* game_capture_start(void **data,
     wchar_t* window_class_name = get_wc(window_class_name_c);
     wchar_t* window_name = get_wc(window_name_c);
 
-    if (window_class_name != NULL && lstrlenW(window_class_name) > 0 &&
-        window_name != NULL && lstrlenW(window_name) > 0) {
+    if (lstrlenW(window_class_name) > 0 &&
+        lstrlenW(window_name) > 0) {
       hwnd = FindWindowW(window_class_name, window_name);
     }
 
     if (hwnd == NULL &&
-        window_class_name != NULL && lstrlenW(window_class_name) > 0) {
+        lstrlenW(window_class_name) > 0) {
       hwnd = FindWindowW(window_class_name, NULL);
       priority = WINDOW_PRIORITY_CLASS;
     }
 
     if (hwnd == NULL &&
-        window_name != NULL && lstrlenW(window_name) > 0) {
+        lstrlenW(window_name) > 0) {
       hwnd = FindWindowW(NULL, window_name);
       priority = WINDOW_PRIORITY_TITLE;
     }
@@ -993,7 +993,8 @@ void* game_capture_start(void **data,
     delete[] window_name;
 
     if (hwnd == NULL) {
-      error("hwnd == null, window not found");
+      error("hwnd == null, window not found. class_name: %s, window_name: %s", 
+          window_class_name_c, window_name_c);
       return NULL;
     }
 
@@ -1145,9 +1146,9 @@ gboolean game_capture_stop(void *data) {
 }
 
 wchar_t *get_wc(const char *c) {
-  int wc_size = MultiByteToWideChar(CP_UTF8, 0, c, strlen(c), NULL, 0);
+  int wc_size = MultiByteToWideChar(CP_UTF8, 0, c, -1, NULL, 0);
   wchar_t* wc = new wchar_t[wc_size];
-  MultiByteToWideChar(CP_UTF8, 0, c , strlen(c), wc, wc_size);
+  MultiByteToWideChar(CP_UTF8, 0, c, -1, wc, wc_size);
   return wc;
 }
 

@@ -66,7 +66,7 @@ struct _GstChocoboPushSrc
     GString  *gc_class_name;
     GString  *gc_window_name;
     GString  *gc_inject_dll_path;
-    gboolean gc_anti_cheat;
+    gboolean  gc_anti_cheat;
 };
 
 struct _GstChocoboPushSrcClass
