@@ -33,6 +33,7 @@
 #define UNITS 10000000
 
 extern bool load_graphics_offsets(bool is32bit);
+char* dll_inject_path = NULL;
 
 enum
 {
@@ -151,11 +152,6 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 static void
 gst_chocobopushsrc_init(GstChocoboPushSrc *src)
 { 
-  bool s32b = load_graphics_offsets(true);
-  bool s64b = load_graphics_offsets(false);
-  GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d", 
-      s32b, s64b);
-
   src->shtex_handle = 0;
   src->shared_resource = NULL;
   src->game_context = NULL;
@@ -198,6 +194,7 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
     }
   case PROP_INJECT_DLL_PATH:
     {
+      dll_inject_path = _strdup(g_value_get_string(value));
       g_string_assign(src->gc_inject_dll_path, g_value_get_string(value));
       break;
     }
@@ -279,6 +276,11 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
   GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
 
   GST_DEBUG_OBJECT(bsrc, "Start() called");
+
+  bool s32b = load_graphics_offsets(true);
+  bool s64b = load_graphics_offsets(false);
+  GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d", 
+      s32b, s64b);
 
   if (!gst_gl_ensure_element_data (src, &src->display, &src->other_context))
     return FALSE;
@@ -395,8 +397,6 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
-  // TODO move this somewhere else, like start
-
   if (!game_capture_is_ready(src->game_context)) {
     src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
     src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);

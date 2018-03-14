@@ -37,17 +37,16 @@
 #endif
 
 extern "C" {
+  extern char* dll_inject_path;
   struct graphics_offsets offsets32 = { 0 };
   struct graphics_offsets offsets64 = { 0 };
-  // static std::vector<std::string> logged_file;
 
   char *bebo_find_file(const char *file_c) {
-    std::string file(file_c);
-    std::wstring out(L"C:\\Program Files (x86)\\Bebo\\bebodlls");
-
-    const wchar_t* out_c = out.c_str();
-    char* result = (char*) bmalloc(wcslen(out_c) + strlen(file_c) + 1);
-    wsprintfA(result, "%S\\%s", out_c, file_c);
+    std::string dll_path(dll_inject_path ? 
+        dll_inject_path : "C:\\Program Files (x86)\\Bebo\\bebodlls");
+    const char* dll_path_c = dll_path.c_str();
+    char* result = (char*) bmalloc(strlen(dll_path_c) + strlen(file_c) + 1);
+    wsprintfA(result, "%s\\%s", dll_path_c, file_c);
     return result;
   }
 }
