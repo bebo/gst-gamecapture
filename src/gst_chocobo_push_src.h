@@ -50,7 +50,6 @@ struct _GstChocoboPushSrc
     void*               shtex_handle; /*HANDLE*/
     void               *game_context;
     GameCaptureConfig  *game_capture_config;
-    GstCaps            *supported_caps;
 
     GstVideoInfo out_info;
     GstGLFramebuffer *fbo;

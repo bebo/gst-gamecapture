@@ -86,7 +86,7 @@ static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 static gboolean _find_local_gl_context(GstChocoboPushSrc *src);
 static gboolean _gl_context_init_shader(GstChocoboPushSrc *src);
-static void _src_generate_fbo_gl(GstGLContext *context, GstChocoboPushSrc *src);
+static void _gl_init(GstGLContext *context, GstChocoboPushSrc *src);
 
 
 #define _do_init \
@@ -151,6 +151,11 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 static void
 gst_chocobopushsrc_init(GstChocoboPushSrc *src)
 { 
+  bool s32b = load_graphics_offsets(true);
+  bool s64b = load_graphics_offsets(false);
+  GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d", 
+      s32b, s64b);
+
   src->shtex_handle = 0;
   src->shared_resource = NULL;
   src->game_context = NULL;
@@ -170,11 +175,6 @@ static void
 gst_chocobopushsrc_finalize(GObject *gobject)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(gobject);
-
-  // gst_object_replace((GstObject **)& src->pool, NULL);
-  // gst_object_replace((GstObject **)& src->fallback_pool, NULL);
-
-  gst_caps_replace(&src->supported_caps, NULL);
 
   G_OBJECT_CLASS(gst_chocobopushsrc_parent_class)->finalize(gobject);
 }
@@ -392,17 +392,10 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
   return TRUE;
 }
 
-
-static volatile gboolean loaded = false;
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
   // TODO move this somewhere else, like start
-  if (!loaded) {
-    loaded = true;
-    bool s32b = load_graphics_offsets(true);
-    bool s64b = load_graphics_offsets(false);
-  }
 
   if (!game_capture_is_ready(src->game_context)) {
     src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
@@ -590,11 +583,11 @@ _gl_context_init_shader(GstChocoboPushSrc *src)
 
 
 static void 
-_src_generate_fbo_gl(GstGLContext *context, GstChocoboPushSrc *src)
+_gl_init(GstGLContext *context, GstChocoboPushSrc *src)
 {
-  src->fbo = gst_gl_framebuffer_new_with_default_depth (src->context,
-      GST_VIDEO_INFO_WIDTH (&src->out_info),
-      GST_VIDEO_INFO_HEIGHT (&src->out_info));
+  src->fbo = gst_gl_framebuffer_new_with_default_depth(src->context,
+      GST_VIDEO_INFO_WIDTH(&src->out_info),
+      GST_VIDEO_INFO_HEIGHT(&src->out_info));
 }
 
 static gboolean
@@ -641,7 +634,7 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
     goto unsupported_gl_api;
 
   gst_gl_context_thread_add (src->context,
-      (GstGLContextThreadFunc) _src_generate_fbo_gl, src);
+      (GstGLContextThreadFunc) _gl_init, src);
   if (!src->fbo)
     goto context_error;
 
