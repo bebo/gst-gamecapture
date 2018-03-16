@@ -163,6 +163,7 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
+  gst_base_src_set_do_timestamp (GST_BASE_SRC (src), TRUE);
 }
 
 /* GObject Functions */
@@ -291,8 +292,6 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
-  src->running_time = 0;
-  src->n_frames = 0;
   src->negotiated = FALSE;
 
   return TRUE;
@@ -459,13 +458,7 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
 
-  GstClockTime next_time;
   GstVideoFrame out_frame;
-  GstGLSyncMeta *sync_meta;
-
-    if (G_UNLIKELY (GST_VIDEO_INFO_FPS_N (&src->out_info) == 0
-          && src->n_frames == 1))
-    goto eos;
 
   if (!gst_video_frame_map (&out_frame,
         &src->out_info, buffer,
@@ -481,33 +474,9 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 
   gst_video_frame_unmap (&out_frame);
 
-  sync_meta = gst_buffer_get_gl_sync_meta (buffer);
-  if (sync_meta)
-    gst_gl_sync_meta_set_sync_point (sync_meta, src->context);
-
-  GST_BUFFER_TIMESTAMP (buffer) = src->timestamp_offset + src->running_time;
-  GST_BUFFER_OFFSET (buffer) = src->n_frames;
-  src->n_frames++;
-  GST_BUFFER_OFFSET_END (buffer) = src->n_frames;
-  if (src->out_info.fps_n) {
-    next_time = gst_util_uint64_scale_int (src->n_frames * GST_SECOND,
-        src->out_info.fps_d, src->out_info.fps_n);
-    GST_BUFFER_DURATION (buffer) = next_time - src->running_time;
-  } else {
-    next_time = src->timestamp_offset;
-    /* NONE means forever */
-    GST_BUFFER_DURATION (buffer) = GST_CLOCK_TIME_NONE;
-  }
-
-  src->running_time = next_time;
+  // collection information for stats
 
   return GST_FLOW_OK;
-
-eos:
-  {
-    GST_DEBUG_OBJECT (src, "eos: 0 framerate, frame %d", (gint) src->n_frames);
-    return GST_FLOW_EOS;
-  }
 }
 
 static void 

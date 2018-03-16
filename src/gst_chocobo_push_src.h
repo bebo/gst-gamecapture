@@ -57,9 +57,6 @@ struct _GstChocoboPushSrc
     GstBufferPool *pool;
     GstGLDisplay *display;
     GstGLContext *context, *other_context;
-    gint64 timestamp_offset;              /* base offset */
-    GstClockTime running_time;            /* total running time */
-    gint64 n_frames;                      /* total frames sent */
     gboolean negotiated;
 
     /* properties */
