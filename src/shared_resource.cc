@@ -230,6 +230,9 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
 
   gl->BindTexture (GL_TEXTURE_2D, 0);
 
+  gl->Disable(GL_BLEND);
+  gl->BlendFunc(GL_ONE, GL_ZERO);
+
   gst_gl_context_clear_shader (gl_context);
 
   if (gl->GenVertexArrays) {
