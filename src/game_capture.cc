@@ -180,7 +180,7 @@ static inline HANDLE open_hook_info(struct game_capture *gc)
   return open_map_plus_id(gc, SHMEM_HOOK_INFO, gc->process_id);
 }
 
-static struct game_capture *game_capture_create(GameCaptureConfig *config, uint64_t frame_interval)
+static struct game_capture *game_capture_create(GameCaptureConfig *config)
 {
   struct game_capture *gc = (struct game_capture*) g_new0(game_capture, 1);
 
@@ -195,8 +195,7 @@ static struct game_capture *game_capture_create(GameCaptureConfig *config, uint6
   gc->config.limit_framerate = config->limit_framerate;
   gc->config.capture_overlays = config->capture_overlays;
   gc->config.anticheat_hook = inject_failed_count > 10 ? true : config->anticheat_hook;
-  gc->frame_interval = frame_interval;
-
+  gc->frame_interval = config->frame_interval;
   gc->initial_config = true;
   gc->priority = config->priority;
   gc->wait_for_target_startup = false;
@@ -885,8 +884,7 @@ static void try_hook(struct game_capture *gc)
 {
   if (0 && gc->config.mode == CAPTURE_MODE_ANY) {
     get_fullscreen_window(gc);
-  }
-  else {
+  } else {
     get_selected_window(gc);
   }
 
@@ -963,7 +961,7 @@ void set_fps(void **data, uint64_t frame_interval) {
 
 void* game_capture_start(void **data, 
     char* window_class_name_c, char* window_name_c, 
-    GameCaptureConfig *config, uint64_t frame_interval) {
+    GameCaptureConfig *config) {
   struct game_capture *gc = (game_capture *)*data;
   if (gc == NULL) {
     HWND hwnd = NULL;
@@ -998,7 +996,7 @@ void* game_capture_start(void **data,
 
     config->window = hwnd;
 
-    gc = game_capture_create(config, frame_interval);
+    gc = game_capture_create(config);
 
     struct dstr *klass = &gc->klass;
     struct dstr *title = &gc->title;
@@ -1101,7 +1099,7 @@ static inline bool capture_valid(struct game_capture *gc)
   return !object_signalled(gc->target_process);
 }
 
-gboolean game_capture_tick(void * data) {
+gboolean game_capture_init_capture_data(void * data) {
   struct game_capture *gc = (game_capture *) data;
 
   if (!gc->active) {
@@ -1121,6 +1119,16 @@ gboolean game_capture_tick(void * data) {
       gc->capturing = start_capture(gc);
     else
       info("init_capture_data failed");
+  }
+
+  return gc->capturing;
+}
+
+gboolean game_capture_tick(void * data) {
+  struct game_capture *gc = (game_capture *) data;
+
+  if (!gc->active) {
+    return FALSE;
   }
 
   if (gc->active) {

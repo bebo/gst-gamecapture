@@ -28,6 +28,7 @@ struct _GameCaptureConfig {
     enum capture_mode             mode;
     uint32_t                      scale_cx;
     uint32_t                      scale_cy;
+    uint64_t                      frame_interval;
     gboolean                      cursor;
     gboolean                      force_shmem;
     gboolean                      force_scaling;
@@ -43,7 +44,8 @@ gboolean game_capture_is_active(void * data);
 void* game_capture_get_shtex_handle(void * data);
 void* game_capture_start(void **data, 
     char* window_class_name, char* window_name,
-    GameCaptureConfig *config, uint64_t frame_interval);
+    GameCaptureConfig *config);
+gboolean game_capture_init_capture_data(void * data);
 gboolean game_capture_tick(void * data);
 gboolean game_capture_stop(void * data);
 void set_fps(void **data, uint64_t frame_interval);

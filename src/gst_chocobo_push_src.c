@@ -87,6 +87,7 @@ static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 static gboolean _find_local_gl_context(GstChocoboPushSrc *src);
 static gboolean _gl_context_init_shader(GstChocoboPushSrc *src);
+static void _gl_generate_fbo(GstGLContext *context, GstChocoboPushSrc *src);
 static void _gl_init(GstGLContext *context, GstChocoboPushSrc *src);
 
 
@@ -115,8 +116,8 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
 
   gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_set_caps);
   gstbasesrc_class->is_seekable = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_is_seekable);
-  // gstbasesrc_class->unlock = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock);
-  // gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
+  gstbasesrc_class->unlock = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock);
+  gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
   gstbasesrc_class->start = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_start);
   gstbasesrc_class->stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_stop);
   gstbasesrc_class->fixate = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fixate);
@@ -164,6 +165,7 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
   gst_base_src_set_do_timestamp (GST_BASE_SRC (src), TRUE);
+  gst_base_src_set_async (GST_BASE_SRC (src), TRUE);
 }
 
 /* GObject Functions */
@@ -292,7 +294,37 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
-  src->negotiated = FALSE;
+  while (src->game_context == NULL) {
+    // TODO set the width, height, fps
+
+    src->game_capture_config->scale_cx = DEFAULT_WIDTH; 
+    // GST_VIDEO_INFO_WIDTH(&src->out_info);
+    src->game_capture_config->scale_cy = DEFAULT_HEIGHT; 
+    // GST_VIDEO_INFO_HEIGHT(&src->out_info);
+    src->game_capture_config->force_scaling = 1;
+    src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
+    src->game_capture_config->frame_interval = UNITS / DEFAULT_FPS * 100;
+    /*(UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100*/
+
+    src->game_context = game_capture_start(&src->game_context,
+        src->gc_class_name->str,
+        src->gc_window_name->str,
+        src->game_capture_config);
+
+    // TODO: instead of hardcode sleep time, we need to listen for _unlock too.
+    // sleep 15millis
+    // no matter if it's game capture is started or not
+    // if game capture is started then we wanna wait 1 frame
+    // before we start call init_capture_data, otherwise, it's more likely we get 
+    // fails to open shared resource error.
+    g_usleep(15000);
+  }
+
+  if (!game_capture_init_capture_data(src->game_context)) {
+    GST_ERROR("Failed to init capture data!");
+  }
+
+  gst_base_src_start_complete(bsrc, GST_FLOW_OK);
 
   return TRUE;
 }
@@ -383,73 +415,10 @@ _draw_texture_callback(gpointer stuff)
   return TRUE;
 }
 
-static gboolean
-_draw_texture_callback_no_game_frame(gpointer stuff)
-{
-  GstChocoboPushSrc *src = GST_CHOCOBO(stuff);
-
-  const GstGLFuncs* gl = src->context->gl_vtable;
-
-  // TODO: what to do, when you dont have a frame from the game yet?
-  gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
-  gl->Clear(GL_COLOR_BUFFER_BIT);
-
-  return TRUE;
-}
-
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
-  if (!game_capture_is_ready(src->game_context)) {
-    src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
-    src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
-    src->game_capture_config->force_scaling = 1;
-    src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
-
-    src->game_context = game_capture_start(&src->game_context,
-        src->gc_class_name->str,
-        src->gc_window_name->str,
-        src->game_capture_config,
-        (UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100);
-  }
-
-  gboolean gl_result = FALSE;
-
-  // check game_capture first to see if it's there
-  if (!src->game_context) {
-    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-        _draw_texture_callback_no_game_frame, src);
-    return;
-  }
-
-  if (game_capture_is_active(src->game_context) &&
-      !game_capture_tick(src->game_context)) {
-    src->game_context = NULL;
-    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-        _draw_texture_callback_no_game_frame, src);
-    return;
-  }
-
-  void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
-  if (!gc_shtex_handle) {
-    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-        _draw_texture_callback_no_game_frame, src);
-    return;
-  }
-
-  if (src->shtex_handle != gc_shtex_handle) {
-    src->shtex_handle = gc_shtex_handle;
-
-    if (!init_shared_resource(src->context, 
-          gc_shtex_handle, 
-          &src->shared_resource)) {
-      gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-          _draw_texture_callback_no_game_frame, src);
-      return;
-    }
-  }
-
-  gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+  gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
       _draw_texture_callback, src);
 }
 
@@ -467,6 +436,11 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     return GST_FLOW_NOT_NEGOTIATED;
   }
 
+  // if window is gone, we're not retry kay
+  if (!game_capture_tick(src->game_context)) {
+    return GST_FLOW_EOS;
+  }
+
   src->out_tex = (GstGLMemory *) out_frame.map[0].memory;
 
   gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _fill_gl,
@@ -474,7 +448,7 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 
   gst_video_frame_unmap (&out_frame);
 
-  // collection information for stats
+  // TODO collection information for stats
 
   return GST_FLOW_OK;
 }
@@ -553,13 +527,28 @@ _gl_context_init_shader(GstChocoboPushSrc *src)
   return gst_gl_context_get_gl_api(src->context);
 }
 
+static void 
+_gl_generate_fbo(GstGLContext *context, GstChocoboPushSrc *src)
+{
+  src->fbo = gst_gl_framebuffer_new_with_default_depth(src->context,
+      GST_VIDEO_INFO_WIDTH(&src->out_info),
+      GST_VIDEO_INFO_HEIGHT(&src->out_info)); 
+}
 
 static void 
 _gl_init(GstGLContext *context, GstChocoboPushSrc *src)
 {
-  src->fbo = gst_gl_framebuffer_new_with_default_depth(src->context,
-      GST_VIDEO_INFO_WIDTH(&src->out_info),
-      GST_VIDEO_INFO_HEIGHT(&src->out_info));
+  void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
+  if (!gc_shtex_handle) {
+    GST_ERROR("unable to accept the fact that gc_shtex_handle is NULL");
+  }
+
+  if (src->shtex_handle != gc_shtex_handle) {
+    src->shtex_handle = gc_shtex_handle;
+
+    init_shared_resource(src->context, gc_shtex_handle,
+        &src->shared_resource);
+  }
 }
 
 static gboolean
@@ -606,7 +595,7 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
     goto unsupported_gl_api;
 
   gst_gl_context_thread_add (src->context,
-      (GstGLContextThreadFunc) _gl_init, src);
+      (GstGLContextThreadFunc) _gl_generate_fbo, src);
   if (!src->fbo)
     goto context_error;
 
@@ -651,6 +640,9 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
 
   _gl_context_init_shader (src);
 
+  gst_gl_context_thread_add (src->context,
+      (GstGLContextThreadFunc) _gl_init, src);
+
   gst_object_unref (pool);
 
   return TRUE;
@@ -693,12 +685,14 @@ gst_chocobopushsrc_is_seekable(GstBaseSrc *src)
 static gboolean
 gst_chocobopushsrc_unlock(GstBaseSrc *src)
 {
+  GST_ERROR("TODO: implement gst_chocobopushsrc_unlock");
   return TRUE;
 }
 
 static gboolean
 gst_chocobopushsrc_unlock_stop(GstBaseSrc *src)
 {
+  GST_ERROR("TODO: implement gst_chocobopushsrc_unlock_stop");
   return TRUE;
 }
 

@@ -151,26 +151,24 @@ static ID3D11Device* create_device_d3d11() {
   return device;
 }
 
-static gboolean init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
+static gboolean init_devices(SharedResource* resource) {
   resource->d3d_device = create_device_d3d11();
-  resource->d3d_shared_handle = shtex_handle;
+  if (resource->d3d_device == NULL) {
+    GST_ERROR("Failed to create d3d11 device");
+    return FALSE;
+  }
 
-  ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
-  HRESULT hr = device->OpenSharedResource(shtex_handle,
-      __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
-
-  return (hr == S_OK);
+  resource->gl_device_handle = wglDXOpenDeviceNV(resource->d3d_device);
+  return TRUE;
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
 
-  BOOL success = wglDXSetResourceShareHandleNV(resource->d3d_texture,
+  wglDXSetResourceShareHandleNV(resource->d3d_texture,
       resource->d3d_shared_handle);
-  // GST_INFO("wglDXSetResourceShareHandleNV success: %d", success != FALSE);
 
   gl->GenTextures(1, &resource->gl_texture);
-  if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
 
   resource->gl_texture_handle = wglDXRegisterObjectNV(resource->gl_device_handle,
       resource->d3d_texture, resource->gl_texture,
@@ -179,32 +177,40 @@ static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context
   //   resource->gl_texture_handle, resource->gl_texture);
 
   gl->BindTexture(GL_TEXTURE_2D, resource->gl_texture);
-  if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
-
   gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  if (gl->GetError() != 0) GST_ERROR("Failed glTexParameteri1");
-
   gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  if (gl->GetError() != 0) GST_ERROR("Failed glTexParameteri2");
-
   gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  if (gl->GetError() != 0) GST_ERROR("Failed glTexParameteri3");
-
   gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  if (gl->GetError() != 0) GST_ERROR("Failed glTexParameteri4");
 
   gl->BindTexture(GL_TEXTURE_2D, 0);
-  if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
 }
 
-static void init_gl_context(SharedResource* resource, GstGLContext* gl_context) {
-  resource->gl_device_handle = wglDXOpenDeviceNV(resource->d3d_device);
+static gboolean open_shared_texture(SharedResource* resource, GstGLContext* gl_context) {
+  ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
+  HRESULT hr = device->OpenSharedResource(resource->d3d_shared_handle,
+      __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
+
+  if (hr != S_OK) {
+    return FALSE;
+  }
+
   create_gl_texture(resource, gl_context);
+  return TRUE;
 }
+
 
 static void
 shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
+
+  // handle the case where theres no gl texture attached to it yet
+  if (resource->gl_texture == 0) {
+    if (!open_shared_texture(resource, gl_context)) {
+      gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
+      gl->Clear(GL_COLOR_BUFFER_BIT);
+      return;
+    }
+  }
 
   // start new shits
   gl->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -214,29 +220,29 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   gl->BlendFunc(GL_ONE, GL_ONE);
 
   gst_gl_shader_use(resource->display_shader);
-  gst_gl_shader_set_uniform_1i (resource->display_shader, "tex", 0);
+  gst_gl_shader_set_uniform_1i(resource->display_shader, "tex", 0);
 
   if (gl->GenVertexArrays) {
-      gl->BindVertexArray (resource->vao);
+    gl->BindVertexArray(resource->vao);
   }
-  _bind_buffer (resource, gl);
+  _bind_buffer(resource, gl);
 
-  gl->ActiveTexture (GL_TEXTURE0);
+  gl->ActiveTexture(GL_TEXTURE0);
   gl->BindTexture(GL_TEXTURE_2D, resource->gl_texture);
 
   wglDXLockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
   gl->DrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
   wglDXUnlockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
 
-  gl->BindTexture (GL_TEXTURE_2D, 0);
+  gl->BindTexture(GL_TEXTURE_2D, 0);
 
   gl->Disable(GL_BLEND);
   gl->BlendFunc(GL_ONE, GL_ZERO);
 
-  gst_gl_context_clear_shader (gl_context);
+  gst_gl_context_clear_shader(gl_context);
 
   if (gl->GenVertexArrays) {
-    gl->BindVertexArray (0);
+    gl->BindVertexArray(0);
   }
 
   _unbind_buffer (resource, gl);
@@ -244,24 +250,15 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
 
 gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
     void** resource_out) {
-#if 0
-  GST_INFO("VENDOR : %s", glGetString(GL_VENDOR));
-  GST_INFO("RENDERER : %s", glGetString(GL_RENDERER));
-  GST_INFO("VERSION : %s", glGetString(GL_VERSION));
-#endif
-
   SharedResource* resource = g_new0(SharedResource, 1);
   resource->draw_frame = shared_resource_draw_frame;
+  resource->d3d_shared_handle = shtex_handle;
 
   init_wgl_functions(gl_context);
   init_display_shader(resource, gl_context);
+  init_devices(resource);
 
-  if (!init_d3d_context(resource, shtex_handle)) {
-    free_shared_resource(gl_context, resource);
-    return FALSE;
-  }
-
-  init_gl_context(resource, gl_context);
+  open_shared_texture(resource, gl_context);
 
   *resource_out = resource;
   return TRUE;

@@ -51,13 +51,13 @@ struct _GstChocoboPushSrc
     void               *game_context;
     GameCaptureConfig  *game_capture_config;
 
+    GstVideoInfo neg_info;
     GstVideoInfo out_info;
     GstGLFramebuffer *fbo;
     GstGLMemory *out_tex;
     GstBufferPool *pool;
     GstGLDisplay *display;
     GstGLContext *context, *other_context;
-    gboolean negotiated;
 
     /* properties */
     GString  *gc_class_name;
