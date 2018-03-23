@@ -146,8 +146,8 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
         TRUE, G_PARAM_READWRITE)); 
 
   g_object_class_install_property(gobject_class, PROP_WIDTH,
-    g_param_spec_uint("width", "width", "output video width",
-       1, 8000, DEFAULT_WIDTH, G_PARAM_READWRITE));
+                                  g_param_spec_uint("width", "width", "website to render into video",
+                                                    0, 8000, DEFAULT_WIDTH, G_PARAM_READWRITE));
 
   g_object_class_install_property(gobject_class, PROP_HEIGHT,
     g_param_spec_uint("height", "height", "output video height",
@@ -175,7 +175,9 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->gc_class_name = g_string_new(NULL);
   src->gc_window_name = g_string_new(NULL);
   src->gc_inject_dll_path = g_string_new(NULL);
-
+  src->width = DEFAULT_WIDTH;
+  src->height = DEFAULT_HEIGHT;
+  src->fps = DEFAULT_FPS;
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
@@ -226,23 +228,23 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
       break;
     }
   case PROP_WIDTH:
-  {
-    src->width = g_value_get_int(value);
-    GST_INFO("width: %d", src->width);
-    break;
-  }
+    {
+      src->width = g_value_get_uint(value);
+      GST_INFO("width: %d", src->width);
+      break;
+    }
   case PROP_HEIGHT:
-  {
-    src->height = g_value_get_int(value);
-    GST_INFO("height: %d", src->height);
-    break;
-  }
+    {
+      src->height = g_value_get_uint(value);
+      GST_INFO("height: %d", src->height);
+      break;
+    }
   case PROP_FPS:
-  {
-    src->fps = g_value_get_int(value);
-    GST_INFO("fps: %d", src->fps);
-    break;
-  }
+    {
+      src->fps = g_value_get_uint(value);
+      GST_INFO("fps: %d", src->fps);
+      break;
+    }
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -310,15 +312,16 @@ gst_chocobopushsrc_set_caps(GstBaseSrc *bsrc, GstCaps *caps)
 
 static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc *bsrc, GstCaps *caps) 
 {
+  GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
   GstStructure *structure;
 
   caps = gst_caps_make_writable (caps);
 
   structure = gst_caps_get_structure (caps, 0);
 
-  gst_structure_fixate_field_nearest_int (structure, "width", DEFAULT_WIDTH);
-  gst_structure_fixate_field_nearest_int (structure, "height", DEFAULT_HEIGHT);
-  gst_structure_fixate_field_nearest_fraction (structure, "framerate", DEFAULT_FPS, 1);
+  gst_structure_fixate_field_nearest_int(structure, "width", src->width);
+  gst_structure_fixate_field_nearest_int (structure, "height", src->height);
+  gst_structure_fixate_field_nearest_fraction (structure, "framerate", src->fps, 1);
 
   caps = GST_BASE_SRC_CLASS (gst_chocobopushsrc_parent_class)->fixate (bsrc, caps);
 
