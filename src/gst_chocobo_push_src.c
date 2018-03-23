@@ -175,6 +175,7 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->gc_class_name = g_string_new(NULL);
   src->gc_window_name = g_string_new(NULL);
   src->gc_inject_dll_path = g_string_new(NULL);
+  src->gc_anti_cheat = TRUE;
   src->width = DEFAULT_WIDTH;
   src->height = DEFAULT_HEIGHT;
   src->fps = DEFAULT_FPS;
