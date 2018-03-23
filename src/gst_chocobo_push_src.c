@@ -42,7 +42,10 @@ enum
   PROP_WINDOW_NAME,
   PROP_INJECT_DLL_PATH,
   PROP_ANTI_CHEAT,
-  PROP_LAST
+  PROP_LAST,
+  PROP_WIDTH,
+  PROP_HEIGHT,
+  PROP_FPS
 };
 
 static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE("src",
@@ -142,6 +145,18 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
       g_param_spec_boolean ("anti-cheat", "anti-cheat", "path to game capture inject dlls",
         TRUE, G_PARAM_READWRITE)); 
 
+  g_object_class_install_property(gobject_class, PROP_WIDTH,
+    g_param_spec_uint("width", "width", "output video width",
+       1, 8000, DEFAULT_WIDTH, G_PARAM_READWRITE));
+
+  g_object_class_install_property(gobject_class, PROP_HEIGHT,
+    g_param_spec_uint("height", "height", "output video height",
+      1, 8000, DEFAULT_HEIGHT, G_PARAM_READWRITE));
+
+  g_object_class_install_property(gobject_class, PROP_FPS,
+    g_param_spec_uint("fps", "fps", "output video fps",
+      1, 240, DEFAULT_FPS, G_PARAM_READWRITE));
+
   gst_element_class_set_static_metadata(gstelement_class,
       "Chocobo video src", "Src/Video",
       "Chocobo video renderer",
@@ -210,6 +225,24 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
       GST_INFO("anti-cheat: %d", src->gc_anti_cheat);
       break;
     }
+  case PROP_WIDTH:
+  {
+    src->width = g_value_get_int(value);
+    GST_INFO("width: %d", src->width);
+    break;
+  }
+  case PROP_HEIGHT:
+  {
+    src->height = g_value_get_int(value);
+    GST_INFO("height: %d", src->height);
+    break;
+  }
+  case PROP_FPS:
+  {
+    src->fps = g_value_get_int(value);
+    GST_INFO("fps: %d", src->fps);
+    break;
+  }
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -243,6 +276,21 @@ gst_chocobopushsrc_get_property(GObject *object, guint prop_id, GValue *value,
         g_value_set_boolean(value, src->gc_anti_cheat);
         break;
       }
+    case PROP_WIDTH:
+    {
+      g_value_set_uint(value, src->width);
+      break;
+    }
+    case PROP_HEIGHT:
+    {
+      g_value_set_uint(value, src->height);
+      break;
+    }
+    case PROP_FPS:
+    {
+      g_value_set_uint(value, src->fps);
+      break;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
       break;
@@ -297,13 +345,13 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
   while (src->game_context == NULL) {
     // TODO set the width, height, fps
 
-    src->game_capture_config->scale_cx = DEFAULT_WIDTH; 
+    src->game_capture_config->scale_cx = src->width; 
     // GST_VIDEO_INFO_WIDTH(&src->out_info);
-    src->game_capture_config->scale_cy = DEFAULT_HEIGHT; 
+    src->game_capture_config->scale_cy = src->height; 
     // GST_VIDEO_INFO_HEIGHT(&src->out_info);
     src->game_capture_config->force_scaling = 1;
     src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
-    src->game_capture_config->frame_interval = UNITS / DEFAULT_FPS * 100;
+    src->game_capture_config->frame_interval = UNITS / src->fps * 100;
     /*(UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100*/
 
     src->game_context = game_capture_start(&src->game_context,
