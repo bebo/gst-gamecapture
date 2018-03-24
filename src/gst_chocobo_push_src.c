@@ -371,8 +371,9 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
     g_usleep(15000);
   }
 
-  if (!game_capture_init_capture_data(src->game_context)) {
+  while(!game_capture_init_capture_data(src->game_context)) {
     GST_ERROR("Failed to init capture data!");
+    g_usleep(1000000);
   }
 
   gst_base_src_start_complete(bsrc, GST_FLOW_OK);
