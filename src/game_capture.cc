@@ -1011,11 +1011,13 @@ void* game_capture_start(void **data,
     gc->priority = priority;
   }
 
-  try_hook(gc);
-  if (gc->active || gc->retrying) {
-    return gc;
+  for (int i = 0; i < 5; i++) {
+    try_hook(gc);
+    if (gc->active) {
+      return gc;
+    }
+    g_usleep(1000000);
   }
-
   return NULL;
 }
 

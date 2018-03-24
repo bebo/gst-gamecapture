@@ -666,7 +666,7 @@ _gl_init(GstGLContext *context, GstChocoboPushSrc *src)
   void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   while (!gc_shtex_handle) {
     GST_ERROR("unable to accept the fact that gc_shtex_handle is NULL");
-    g_usleep(15000);
+    g_usleep(1000000);
     gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   }
 
