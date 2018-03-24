@@ -89,7 +89,6 @@ static gboolean gst_chocobopushsrc_query(GstBaseSrc *bsrc, GstQuery *query);
 static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 static gboolean _find_local_gl_context(GstChocoboPushSrc *src);
-static gboolean _gl_context_init_shader(GstChocoboPushSrc *src);
 static void _gl_generate_fbo(GstGLContext *context, GstChocoboPushSrc *src);
 static void _gl_init(GstGLContext *context, GstChocoboPushSrc *src);
 
@@ -573,12 +572,6 @@ _find_local_gl_context(GstChocoboPushSrc *src)
   return FALSE;
 }
 
-static gboolean
-_gl_context_init_shader(GstChocoboPushSrc *src) 
-{
-  return gst_gl_context_get_gl_api(src->context);
-}
-
 static void 
 _gl_generate_fbo(GstGLContext *context, GstChocoboPushSrc *src)
 {
@@ -591,8 +584,10 @@ static void
 _gl_init(GstGLContext *context, GstChocoboPushSrc *src)
 {
   void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
-  if (!gc_shtex_handle) {
+  while (!gc_shtex_handle) {
     GST_ERROR("unable to accept the fact that gc_shtex_handle is NULL");
+    g_usleep(15000);
+    gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   }
 
   if (src->shtex_handle != gc_shtex_handle) {
@@ -689,8 +684,6 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
     gst_query_set_nth_allocation_pool (query, 0, pool, size, min, max);
   else
     gst_query_add_allocation_pool (query, pool, size, min, max);
-
-  _gl_context_init_shader (src);
 
   gst_gl_context_thread_add (src->context,
       (GstGLContextThreadFunc) _gl_init, src);
