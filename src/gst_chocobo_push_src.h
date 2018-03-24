@@ -59,6 +59,10 @@ struct _GstChocoboPushSrc
     GstGLContext *context, *other_context;
     gboolean negotiated;
 
+    gint64 timestamp_offset;
+    GstClockTime running_time;
+    gint64 n_frames;
+
     /* properties */
     GString  *gc_class_name;
     GString  *gc_window_name;

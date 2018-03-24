@@ -293,6 +293,9 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
   src->negotiated = FALSE;
+  src->running_time = 0;
+  src->timestamp_offset = 0;
+  src->n_frames = 0;
 
   return TRUE;
 }
@@ -364,11 +367,65 @@ gst_chocobopushsrc_query(GstBaseSrc *bsrc, GstQuery *query)
 
         return res;
       }
+    case GST_QUERY_LATENCY:
+      {
+        GST_OBJECT_LOCK (src);
+        if (src->out_info.fps_n > 0) {
+          GstClockTime latency;
+
+          latency =
+            gst_util_uint64_scale (GST_SECOND, src->out_info.fps_d,
+                src->out_info.fps_n);
+          GST_OBJECT_UNLOCK (src);
+          gst_query_set_latency (query,
+              gst_base_src_is_live (GST_BASE_SRC_CAST (src)), latency,
+              GST_CLOCK_TIME_NONE);
+          GST_DEBUG_OBJECT (src, "Reporting latency of %" GST_TIME_FORMAT,
+              GST_TIME_ARGS (latency));
+          res = TRUE;
+        } else {
+          GST_OBJECT_UNLOCK (src);
+        }
+        break;
+      }
+    case GST_QUERY_DURATION:
+      {
+        if (bsrc->num_buffers != -1) {
+          GstFormat format;
+
+          gst_query_parse_duration (query, &format, NULL);
+          switch (format) {
+            case GST_FORMAT_TIME:
+              {
+                gint64 dur;
+
+                GST_OBJECT_LOCK (src);
+                dur = gst_util_uint64_scale_int_round (bsrc->num_buffers
+                    * GST_SECOND, src->out_info.fps_d, src->out_info.fps_n);
+                res = TRUE;
+                gst_query_set_duration (query, GST_FORMAT_TIME, dur);
+                GST_OBJECT_UNLOCK (src);
+                goto done;
+              }
+            case GST_FORMAT_BYTES:
+              GST_OBJECT_LOCK (src);
+              res = TRUE;
+              gst_query_set_duration (query, GST_FORMAT_BYTES,
+                  bsrc->num_buffers * src->out_info.size);
+              GST_OBJECT_UNLOCK (src);
+              goto done;
+            default:
+              break;
+          }
+        }
+      }
     default:
       break;
   }
 
   return GST_BASE_SRC_CLASS (gst_chocobopushsrc_parent_class)->query (bsrc, query);
+done:
+  return res;
 }
 
 
@@ -410,7 +467,7 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
         src->gc_class_name->str,
         src->gc_window_name->str,
         src->game_capture_config,
-        (UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100);
+        (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / GST_VIDEO_INFO_FPS_N(&src->out_info)));
   }
 
   gboolean gl_result = FALSE;
@@ -458,7 +515,9 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
 
+  GstClockTime next_time;
   GstVideoFrame out_frame;
+  GstGLSyncMeta *sync_meta;
 
   if (!gst_video_frame_map (&out_frame,
         &src->out_info, buffer,
@@ -475,6 +534,25 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   gst_video_frame_unmap (&out_frame);
 
   // collection information for stats
+  sync_meta = gst_buffer_get_gl_sync_meta (buffer);
+  if (sync_meta)
+    gst_gl_sync_meta_set_sync_point (sync_meta, src->context);
+
+  GST_BUFFER_TIMESTAMP (buffer) = src->timestamp_offset + src->running_time;
+  GST_BUFFER_OFFSET (buffer) = src->n_frames;
+  src->n_frames++;
+  GST_BUFFER_OFFSET_END (buffer) = src->n_frames;
+  if (src->out_info.fps_n) {
+    next_time = gst_util_uint64_scale_int (src->n_frames * GST_SECOND,
+        src->out_info.fps_d, src->out_info.fps_n);
+    GST_BUFFER_DURATION (buffer) = next_time - src->running_time;
+  } else {
+    next_time = src->timestamp_offset;
+    /* NONE means forever */
+    GST_BUFFER_DURATION (buffer) = GST_CLOCK_TIME_NONE;
+  }
+
+  src->running_time = next_time;
 
   return GST_FLOW_OK;
 }
