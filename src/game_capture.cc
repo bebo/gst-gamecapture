@@ -1149,7 +1149,8 @@ gboolean game_capture_tick(void * data) {
 gboolean game_capture_stop(void *data) {
   struct game_capture *gc = (game_capture*) data;
   stop_capture(gc);
-  g_free(gc);
+  // TODO: Causes crashes.
+  // g_free(gc);
   return TRUE;
 }
 
