@@ -1138,7 +1138,6 @@ gboolean game_capture_tick(void * data) {
       info("capture window no longer exists, "
           "terminating capture");
       stop_capture(gc);
-      g_free(gc);
       return FALSE;
     }
   }
@@ -1150,7 +1149,7 @@ gboolean game_capture_stop(void *data) {
   struct game_capture *gc = (game_capture*) data;
   stop_capture(gc);
   // TODO: Causes crashes.
-  // g_free(gc);
+  g_free(gc);
   return TRUE;
 }
 
