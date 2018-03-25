@@ -1138,7 +1138,6 @@ gboolean game_capture_tick(void * data) {
       info("capture window no longer exists, "
           "terminating capture");
       stop_capture(gc);
-      g_free(gc);
       return FALSE;
     }
   }
