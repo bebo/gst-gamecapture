@@ -180,6 +180,7 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->height = DEFAULT_HEIGHT;
   src->fps = DEFAULT_FPS;
   src->closing = FALSE;
+  g_mutex_init(&src->game_context_mutex);
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
@@ -342,11 +343,13 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 		return FALSE;
 
 	gst_gl_display_filter_gl_api(src->display, SUPPORTED_GL_APIS);
-
+  g_mutex_lock(&src->game_context_mutex);
 	while (src->game_context == NULL) {
 		GST_LOG("Game context is NULL.  Attempting to get context");
-		if (src->closing)
-			return FALSE;
+    if (src->closing) {
+      g_mutex_unlock(&src->game_context_mutex);
+      return FALSE;
+    }
 		// TODO set the width, height, fps
 
 		src->game_capture_config->scale_cx = src->width;
@@ -362,6 +365,8 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 			src->gc_class_name->str,
 			src->gc_window_name->str,
 			src->game_capture_config);
+    if (src->game_context)
+      break;
 
 		// TODO: instead of hardcode sleep time, we need to listen for _unlock too.
 		// sleep 15millis
@@ -377,6 +382,7 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
     if (src->closing) {
       game_capture_stop(src->game_context);
       src->game_context = NULL;
+      g_mutex_unlock(&src->game_context_mutex);
       return FALSE;
     }
 		g_usleep(20000);
@@ -387,7 +393,7 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 	src->running_time = 0;
 	src->timestamp_offset = 0;
 	src->n_frames = 0;
-
+  g_mutex_unlock(&src->game_context_mutex);
 	return TRUE;
 }
 
@@ -397,7 +403,7 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 	GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
 
 	GST_DEBUG_OBJECT(bsrc, "Start() called");
-	gst_chocobopushsrc_start_helper(src);
+	return gst_chocobopushsrc_start_helper(src);
 }
 
 static void 
@@ -405,6 +411,7 @@ gst_chocobopushsrc_gl_stop(GstGLContext* context,
     GstChocoboPushSrc* src) {
   GST_DEBUG("gst_chocobopushsrc_gl_stop");
   src->closing = TRUE;
+  g_mutex_lock(&src->game_context_mutex);
   if (src->fbo) {
     gst_object_unref (src->fbo);
   }
@@ -419,6 +426,7 @@ gst_chocobopushsrc_gl_stop(GstGLContext* context,
     game_capture_stop(src->game_context);
     src->game_context = NULL;
   }
+  g_mutex_clear(&src->game_context_mutex);
 }
 
 static gboolean
@@ -552,7 +560,7 @@ static GstFlowReturn
 gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
-
+  // TODO: We probably should lock the game_context in this function.
   GstClockTime next_time;
   GstVideoFrame out_frame;
   GstGLSyncMeta *sync_meta;

@@ -46,10 +46,12 @@ struct _GstChocoboPushSrc
 {
     GstPushSrc         src;
 
-    SharedResource     *shared_resource;
-    void*               shtex_handle; /*HANDLE*/
-    void               *game_context;
+    SharedResource *shared_resource;
+    void *shtex_handle;
+
     GameCaptureConfig  *game_capture_config;
+    GMutex game_context_mutex;
+    void *game_context;
 
     GstVideoInfo neg_info;
     GstVideoInfo out_info;
