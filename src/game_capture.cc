@@ -402,7 +402,6 @@ static const char *blacklisted_exes[] = {
   "applicationframehost",
   "cmd",
   "bebo",
-  "epicgameslauncher",
   "shellexperiencehost",
   "winstore.app",
   "searchui",
