@@ -181,6 +181,10 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->fps = DEFAULT_FPS;
   src->closing = FALSE;
   g_mutex_init(&src->game_context_mutex);
+  g_mutex_init(&src->frame_mutex);
+  g_cond_init(&src->game_context_ready_cond);
+  g_atomic_int_set(&src->game_context_ready, 0);
+
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
@@ -393,6 +397,8 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 	src->running_time = 0;
 	src->timestamp_offset = 0;
 	src->n_frames = 0;
+  g_atomic_int_set(&src->game_context_ready, 1);
+  g_cond_signal(&src->game_context_ready_cond);
   g_mutex_unlock(&src->game_context_mutex);
 	return TRUE;
 }
@@ -427,6 +433,8 @@ gst_chocobopushsrc_gl_stop(GstGLContext* context,
     src->game_context = NULL;
   }
   g_mutex_clear(&src->game_context_mutex);
+  g_mutex_clear(&src->frame_mutex);
+  g_cond_clear(&src->game_context_ready_cond);
 }
 
 static gboolean
@@ -560,7 +568,15 @@ static GstFlowReturn
 gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
-  // TODO: We probably should lock the game_context in this function.
+  g_mutex_lock(&src->frame_mutex);
+  while (g_atomic_int_get(&src->game_context_ready) == 0) {
+    g_cond_wait(&src->frame_mutex, &src->frame_mutex);
+    if (src->closing) {
+      g_mutex_unlock(&src->frame_mutex);
+      return GST_FLOW_EOS;
+    }
+  }
+
   GstClockTime next_time;
   GstVideoFrame out_frame;
   GstGLSyncMeta *sync_meta;
@@ -568,12 +584,13 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   if (!gst_video_frame_map (&out_frame,
         &src->out_info, buffer,
         GST_MAP_WRITE | GST_MAP_GL)) {
-
+    g_mutex_unlock(&src->frame_mutex);
     return GST_FLOW_NOT_NEGOTIATED;
   }
 
   // if window is gone, we're not retry kay
   if (!game_capture_tick(src->game_context)) {
+    g_mutex_unlock(&src->frame_mutex);
     return GST_FLOW_EOS;
   }
 
@@ -605,7 +622,7 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   }
 
   src->running_time = next_time;
-
+  g_mutex_unlock(&src->frame_mutex);
   return GST_FLOW_OK;
 }
 

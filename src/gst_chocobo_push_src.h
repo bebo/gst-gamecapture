@@ -51,6 +51,10 @@ struct _GstChocoboPushSrc
 
     GameCaptureConfig  *game_capture_config;
     GMutex game_context_mutex;
+
+    GMutex frame_mutex;
+    gint game_context_ready;
+    GCond game_context_ready_cond;
     void *game_context;
 
     GstVideoInfo neg_info;
