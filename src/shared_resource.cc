@@ -205,7 +205,17 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
 
   // handle the case where theres no gl texture attached to it yet
   if (resource->gl_texture == 0) {
-    if (!open_shared_texture(resource, gl_context)) {
+    bool failure = true;
+    for (int i = 0; i < 10; i++) {
+      if (open_shared_texture(resource, gl_context)) {
+        failure = false;
+        break;
+      }
+      GST_INFO("Failed to open the shared texture.  Retrying in 20ms");
+      g_usleep(20000);
+    }
+    if (failure) {
+      GST_INFO("Failed to open the shared texture");
       gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
       gl->Clear(GL_COLOR_BUFFER_BIT);
       return;
