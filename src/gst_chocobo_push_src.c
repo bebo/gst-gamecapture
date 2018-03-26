@@ -346,6 +346,7 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
   while (src->game_context == NULL) {
+    GST_LOG("Game context is NULL.  Attempting to get context");
     // TODO set the width, height, fps
 
     src->game_capture_config->scale_cx = src->width; 
@@ -528,7 +529,6 @@ _draw_texture_callback(gpointer stuff)
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
-
   gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex, _draw_texture_callback, src);
 }
 
