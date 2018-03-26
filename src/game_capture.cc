@@ -773,6 +773,7 @@ static inline bool attempt_existing_hook(struct game_capture *gc)
 
 static bool init_hook(struct game_capture *gc)
 {
+  GST_LOG("init_hook");
   struct dstr exe = { 0 };
   bool blacklisted_process = false;
 
@@ -1003,19 +1004,15 @@ void* game_capture_start(void **data,
     get_window_class(klass, hwnd);
     get_window_exe(exe, hwnd);
     get_window_title(title, hwnd);
-
+    debug("Retrieved window handle.  Setting gc properties %s, %s, %s", title->array, klass->array, exe->array);
     gc->config.executable = _strdup(exe->array);
     gc->config.title = _strdup(title->array);
     gc->config.klass = _strdup(klass->array);;
     gc->priority = priority;
   }
-
-  for (int i = 0; i < 5; i++) {
-    try_hook(gc);
-    if (gc->active) {
-      return gc;
-    }
-    g_usleep(1000000);
+  try_hook(gc);
+  if (gc->active) {
+    return gc;
   }
   return NULL;
 }
@@ -1157,5 +1154,3 @@ wchar_t *get_wc(const char *c) {
   MultiByteToWideChar(CP_UTF8, 0, c, -1, wc, wc_size);
   return wc;
 }
-
-
