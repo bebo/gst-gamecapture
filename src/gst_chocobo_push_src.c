@@ -330,65 +330,70 @@ static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc *bsrc, GstCaps *caps)
 }
 
 static gboolean
+gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
+{
+	bool s32b = load_graphics_offsets(true);
+	bool s64b = load_graphics_offsets(false);
+	GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d",
+		s32b, s64b);
+
+	if (!gst_gl_ensure_element_data(src, &src->display, &src->other_context))
+		return FALSE;
+
+	gst_gl_display_filter_gl_api(src->display, SUPPORTED_GL_APIS);
+
+	while (src->game_context == NULL) {
+		GST_LOG("Game context is NULL.  Attempting to get context");
+		if (src->closing)
+			return FALSE;
+		// TODO set the width, height, fps
+
+		src->game_capture_config->scale_cx = src->width;
+		// GST_VIDEO_INFO_WIDTH(&src->out_info);
+		src->game_capture_config->scale_cy = src->height;
+		// GST_VIDEO_INFO_HEIGHT(&src->out_info);
+		src->game_capture_config->force_scaling = 1;
+		src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
+		src->game_capture_config->frame_interval = UNITS / src->fps * 100;
+		/*(UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100*/
+
+		src->game_context = game_capture_start(&src->game_context,
+			src->gc_class_name->str,
+			src->gc_window_name->str,
+			src->game_capture_config);
+
+		// TODO: instead of hardcode sleep time, we need to listen for _unlock too.
+		// sleep 15millis
+		// no matter if it's game capture is started or not
+		// if game capture is started then we wanna wait 1 frame
+		// before we start call init_capture_data, otherwise, it's more likely we get 
+		// fails to open shared resource error.
+		g_usleep(15000);
+	}
+
+	while (!game_capture_init_capture_data(src->game_context)) {
+		GST_INFO("Failed to init capture data. Retrying in 20ms");
+		if (src->closing)
+			return FALSE;
+		g_usleep(20000);
+	}
+
+	gst_base_src_start_complete(src, GST_FLOW_OK);
+
+	src->running_time = 0;
+	src->timestamp_offset = 0;
+	src->n_frames = 0;
+
+	return TRUE;
+}
+
+static gboolean
 gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 {
-  GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
+	GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
 
-  GST_DEBUG_OBJECT(bsrc, "Start() called");
-
-  bool s32b = load_graphics_offsets(true);
-  bool s64b = load_graphics_offsets(false);
-  GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d", 
-      s32b, s64b);
-
-  if (!gst_gl_ensure_element_data (src, &src->display, &src->other_context))
-    return FALSE;
-
-  gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
-
-  while (src->game_context == NULL) {
-    GST_LOG("Game context is NULL.  Attempting to get context");
-    if (src->closing)
-      return FALSE;
-    // TODO set the width, height, fps
-
-    src->game_capture_config->scale_cx = src->width; 
-    // GST_VIDEO_INFO_WIDTH(&src->out_info);
-    src->game_capture_config->scale_cy = src->height; 
-    // GST_VIDEO_INFO_HEIGHT(&src->out_info);
-    src->game_capture_config->force_scaling = 1;
-    src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
-    src->game_capture_config->frame_interval = UNITS / src->fps * 100;
-    /*(UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100*/
-
-    src->game_context = game_capture_start(&src->game_context,
-        src->gc_class_name->str,
-        src->gc_window_name->str,
-        src->game_capture_config);
-
-    // TODO: instead of hardcode sleep time, we need to listen for _unlock too.
-    // sleep 15millis
-    // no matter if it's game capture is started or not
-    // if game capture is started then we wanna wait 1 frame
-    // before we start call init_capture_data, otherwise, it's more likely we get 
-    // fails to open shared resource error.
-    g_usleep(15000);
-  }
-
-  while(!game_capture_init_capture_data(src->game_context)) {
-    GST_INFO("Failed to init capture data. Retrying in 20ms");
-    if (src->closing)
-      return FALSE;
-    g_usleep(20000);
-  }
-
-  gst_base_src_start_complete(bsrc, GST_FLOW_OK);
-
-  src->running_time = 0;
-  src->timestamp_offset = 0;
-  src->n_frames = 0;
-
-  return TRUE;
+	GST_DEBUG_OBJECT(bsrc, "Start() called");
+	gst_chocobopushsrc_start_helper(src);
 }
 
 static void 
