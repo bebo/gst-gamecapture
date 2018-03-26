@@ -21,6 +21,7 @@
 #endif
 
 #include "gst_chocobo_push_src.h"
+#include "game_capture.h"
 #include <stdbool.h>
 
 #define ELEMENT_NAME  "gamecapture"
@@ -373,8 +374,11 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 
 	while (!game_capture_init_capture_data(src->game_context)) {
 		GST_INFO("Failed to init capture data. Retrying in 20ms");
-		if (src->closing)
-			return FALSE;
+    if (src->closing) {
+      game_capture_stop(src->game_context);
+      src->game_context = NULL;
+      return FALSE;
+    }
 		g_usleep(20000);
 	}
 
