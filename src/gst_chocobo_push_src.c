@@ -178,6 +178,7 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->width = DEFAULT_WIDTH;
   src->height = DEFAULT_HEIGHT;
   src->fps = DEFAULT_FPS;
+  src->closing = FALSE;
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
@@ -347,6 +348,8 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   while (src->game_context == NULL) {
     GST_LOG("Game context is NULL.  Attempting to get context");
+    if (src->closing)
+      return FALSE;
     // TODO set the width, height, fps
 
     src->game_capture_config->scale_cx = src->width; 
@@ -374,6 +377,8 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   while(!game_capture_init_capture_data(src->game_context)) {
     GST_INFO("Failed to init capture data. Retrying in 20ms");
+    if (src->closing)
+      return FALSE;
     g_usleep(20000);
   }
 
@@ -389,6 +394,8 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 static void 
 gst_chocobopushsrc_gl_stop(GstGLContext* context,
     GstChocoboPushSrc* src) {
+  GST_DEBUG("gst_chocobopushsrc_gl_stop");
+  src->closing = TRUE;
   if (src->fbo) {
     gst_object_unref (src->fbo);
   }
@@ -667,6 +674,7 @@ _gl_init(GstGLContext *context, GstChocoboPushSrc *src)
   void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   while (!gc_shtex_handle) {
     GST_INFO("gc_shtex_handle is NULL. Retrying in 20ms...");
+    // TODO: Consider what closing does.
     g_usleep(20000);
     gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   }

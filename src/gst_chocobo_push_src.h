@@ -62,6 +62,7 @@ struct _GstChocoboPushSrc
     gint64 timestamp_offset;
     GstClockTime running_time;
     gint64 n_frames;
+    volatile gboolean closing;
 
     /* properties */
     GString  *gc_class_name;
