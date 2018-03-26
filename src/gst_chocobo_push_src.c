@@ -372,8 +372,8 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
   }
 
   while(!game_capture_init_capture_data(src->game_context)) {
-    GST_WARNING("Failed to init capture data!");
-    g_usleep(100000);
+    GST_INFO("Failed to init capture data. Retrying in 20ms");
+    g_usleep(20000);
   }
 
   gst_base_src_start_complete(bsrc, GST_FLOW_OK);
@@ -666,8 +666,8 @@ _gl_init(GstGLContext *context, GstChocoboPushSrc *src)
 {
   void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   while (!gc_shtex_handle) {
-    GST_INFO("unable to accept the fact that gc_shtex_handle is NULL. Retrying in 100ms...");
-    g_usleep(100000);
+    GST_INFO("gc_shtex_handle is NULL. Retrying in 20ms...");
+    g_usleep(20000);
     gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   }
 
