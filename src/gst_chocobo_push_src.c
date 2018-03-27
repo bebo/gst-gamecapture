@@ -704,6 +704,8 @@ _gl_init(GstGLContext *context, GstChocoboPushSrc *src)
   while (!gc_shtex_handle) {
     GST_INFO("gc_shtex_handle is NULL. Retrying in 20ms...");
     // TODO: Consider what closing does.
+    if (src->closing)
+      return;
     g_usleep(20000);
     gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
   }
@@ -720,7 +722,7 @@ static gboolean
 gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
-
+  GST_LOG("Deciding Allocation");
   GstBufferPool *pool = NULL;
   GstStructure *config;
   GstCaps *caps;
