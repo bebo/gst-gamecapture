@@ -205,6 +205,7 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
 
   // handle the case where theres no gl texture attached to it yet
   if (resource->gl_texture == 0) {
+    GST_DEBUG("No gl_texture attached to the shared resource");
     bool failure = true;
     for (int i = 0; i < 10; i++) {
       if (open_shared_texture(resource, gl_context)) {

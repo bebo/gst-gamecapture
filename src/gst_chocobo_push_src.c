@@ -371,17 +371,12 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 			src->game_capture_config);
     if (src->game_context)
       break;
-
-		// TODO: instead of hardcode sleep time, we need to listen for _unlock too.
-		// sleep 15millis
-		// no matter if it's game capture is started or not
-		// if game capture is started then we wanna wait 1 frame
-		// before we start call init_capture_data, otherwise, it's more likely we get 
-		// fails to open shared resource error.
 		g_usleep(15000);
 	}
-
-	while (!game_capture_init_capture_data(src->game_context)) {
+  // FIXME: We call game_capture_init_capture_data before the d3d11 texture is ready
+  // FIXME: and end up with a null texture.  This leaves us with a pink screen.
+  g_usleep(100000);
+  while (!game_capture_init_capture_data(src->game_context)) {
 		GST_INFO("Failed to init capture data. Retrying in 20ms");
     if (src->closing) {
       game_capture_stop(src->game_context);
