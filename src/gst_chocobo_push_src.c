@@ -198,7 +198,7 @@ static void
 gst_chocobopushsrc_finalize(GObject *gobject)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(gobject);
-
+  GST_DEBUG("Finalizing");
   G_OBJECT_CLASS(gst_chocobopushsrc_parent_class)->finalize(gobject);
 }
 
@@ -354,16 +354,11 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
       g_mutex_unlock(&src->game_context_mutex);
       return FALSE;
     }
-		// TODO set the width, height, fps
-
 		src->game_capture_config->scale_cx = src->width;
-		// GST_VIDEO_INFO_WIDTH(&src->out_info);
 		src->game_capture_config->scale_cy = src->height;
-		// GST_VIDEO_INFO_HEIGHT(&src->out_info);
 		src->game_capture_config->force_scaling = 1;
 		src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
 		src->game_capture_config->frame_interval = UNITS / src->fps * 100;
-		/*(UNITS / GST_VIDEO_INFO_FPS_N(&src->out_info)) * 100*/
 
 		src->game_context = game_capture_start(&src->game_context,
 			src->gc_class_name->str,
@@ -375,7 +370,7 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
 	}
   // FIXME: We call game_capture_init_capture_data before the d3d11 texture is ready
   // FIXME: and end up with a null texture.  This leaves us with a pink screen.
-  g_usleep(100000);
+  g_usleep(1000000);
   while (!game_capture_init_capture_data(src->game_context)) {
 		GST_INFO("Failed to init capture data. Retrying in 20ms");
     if (src->closing) {
