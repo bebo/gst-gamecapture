@@ -373,9 +373,6 @@ gst_chocobopushsrc_start_helper(GstChocoboPushSrc *src)
       break;
 		g_usleep(15000);
 	}
-  // FIXME: We call game_capture_init_capture_data before the d3d11 texture is ready
-  // FIXME: and end up with a null texture.  This leaves us with a pink screen.
-  g_usleep(100000);
   while (!game_capture_init_capture_data(src->game_context)) {
 		GST_INFO("Failed to init capture data. Retrying in 20ms");
     if (src->closing) {
