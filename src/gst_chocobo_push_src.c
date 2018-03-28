@@ -508,19 +508,6 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
 static void
 _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 {
-  if (!game_capture_is_ready(src->game_context)) {
-    src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
-    src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
-    src->game_capture_config->force_scaling = 1;
-    src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
-
-    src->game_context = game_capture_start(&src->game_context,
-        src->gc_class_name->str,
-        src->gc_window_name->str,
-        src->game_capture_config,
-        (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / GST_VIDEO_INFO_FPS_N(&src->out_info)));
-  }
-
   gboolean gl_result = FALSE;
 
   // check game_capture first to see if it's there
@@ -578,6 +565,19 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   }
 
   src->out_tex = (GstGLMemory *) out_frame.map[0].memory;
+
+  if (!game_capture_is_ready(src->game_context)) {
+    src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
+    src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
+    src->game_capture_config->force_scaling = 1;
+    src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
+
+    src->game_context = game_capture_start(&src->game_context,
+      src->gc_class_name->str,
+      src->gc_window_name->str,
+      src->game_capture_config,
+      (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / GST_VIDEO_INFO_FPS_N(&src->out_info)));
+  }
 
   gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _fill_gl,
       src);
