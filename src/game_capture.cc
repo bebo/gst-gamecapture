@@ -743,6 +743,9 @@ static inline bool init_events(struct game_capture *gc)
           GetLastError());
       return false;
     }
+    // For some reason we need to reset the event every time or else 
+    // we try reading information from shared memory before we are ready.
+    ResetEvent(gc->hook_ready);
   }
 
   if (!gc->hook_exit) {
