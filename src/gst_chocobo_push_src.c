@@ -310,15 +310,16 @@ gst_chocobopushsrc_set_caps(GstBaseSrc *bsrc, GstCaps *caps)
 
 static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc *bsrc, GstCaps *caps) 
 {
+  GstChocoboPushSrc *src = GST_CHOCOBO(bsrc);
   GstStructure *structure;
 
   caps = gst_caps_make_writable (caps);
 
   structure = gst_caps_get_structure (caps, 0);
 
-  gst_structure_fixate_field_nearest_int (structure, "width", DEFAULT_WIDTH);
-  gst_structure_fixate_field_nearest_int (structure, "height", DEFAULT_HEIGHT);
-  gst_structure_fixate_field_nearest_fraction (structure, "framerate", DEFAULT_FPS, 1);
+  gst_structure_fixate_field_nearest_int (structure, "width", src->width);
+  gst_structure_fixate_field_nearest_int (structure, "height", src->height);
+  gst_structure_fixate_field_nearest_fraction (structure, "framerate", src->fps, 1);
 
   caps = GST_BASE_SRC_CLASS (gst_chocobopushsrc_parent_class)->fixate (bsrc, caps);
 

@@ -13,10 +13,9 @@
 extern "C" {
 #endif 
 
-#if 0
+
 GST_EXPORT GstDebugCategory *gst_chocobopushsrc_debug;
 #define GST_CAT_DEFAULT gst_chocobopushsrc_debug
-#endif
 
 typedef struct _SharedResource SharedResource;
 struct _SharedResource {
