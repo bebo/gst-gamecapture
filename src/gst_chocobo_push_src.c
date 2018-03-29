@@ -21,6 +21,8 @@
 #endif
 
 #include "gst_chocobo_push_src.h"
+#include "gamecapture/graphics-hook-info.h"
+
 #include <stdbool.h>
 
 #define ELEMENT_NAME  "gamecapture"
@@ -534,10 +536,11 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
 
   if (src->shtex_handle != gc_shtex_handle) {
     src->shtex_handle = gc_shtex_handle;
-
+    struct game_capture *gc = (struct game_capture*) src->game_context;
     if (!init_shared_resource(src->context, 
           gc_shtex_handle, 
-          &src->shared_resource)) {
+          &src->shared_resource,
+          gc->global_hook_info->flip)) {
       gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
           _draw_texture_callback_no_game_frame, src);
       return;
@@ -578,7 +581,6 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
       src->game_capture_config,
       (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / GST_VIDEO_INFO_FPS_N(&src->out_info)));
   }
-
   gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _fill_gl,
       src);
 

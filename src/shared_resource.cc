@@ -1,15 +1,22 @@
 #include "shared_resource.h"
 
 /* *INDENT-OFF* */
+static const GLfloat flip_vertices[] = {
+  -1.0f,  -1.0f, 0.0f, 0.0f, 1.0f,
+  1.0f,  -1.0f,  0.0f, 1.0f, 1.0f,
+  -1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+  1.0f, 1.0f,  0.0f, 1.0f, 0.0f
+};
+
+static const GLushort indices[] = { 0, 1, 2, 1, 3, 2 };
+/* *INDENT-ON* */
+
 static const GLfloat vertices[] = {
   -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
   1.0f,  1.0f,  0.0f, 1.0f, 1.0f,
   -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
   1.0f, -1.0f,  0.0f, 1.0f, 0.0f
 };
-
-static const GLushort indices[] = { 0, 1, 2, 1, 3, 2 };
-/* *INDENT-ON* */
 
 const static D3D_FEATURE_LEVEL d3d_feature_levels[] =
 {
@@ -70,7 +77,7 @@ static void init_wgl_functions(GstGLContext* gl_context) {
     gst_gl_context_get_proc_address(gl_context, "wglDXSetResourceShareHandleNV");
 }
 
-static void init_display_shader(SharedResource* resource, GstGLContext* gl_context) {
+static void init_display_shader(SharedResource* resource, GstGLContext* gl_context, bool flipped) {
   GError *error = NULL;
   const GstGLFuncs* gl = gl_context->gl_vtable;
   GstGLSLStage* vert_stage = gst_glsl_stage_new_default_vertex (gl_context);
@@ -91,8 +98,14 @@ static void init_display_shader(SharedResource* resource, GstGLContext* gl_conte
   if (!resource->vertex_buffer) {
     gl->GenBuffers (1, &resource->vertex_buffer);
     gl->BindBuffer (GL_ARRAY_BUFFER, resource->vertex_buffer);
-    gl->BufferData (GL_ARRAY_BUFFER, 4 * 5 * sizeof (GLfloat), vertices,
+    if (!flipped) {
+      gl->BufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(GLfloat), vertices,
         GL_STATIC_DRAW);
+    }
+    else {
+      gl->BufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(GLfloat), flip_vertices,
+        GL_STATIC_DRAW);
+    }
   }
 
   if (!resource->vbo_indices) {
@@ -243,7 +256,7 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
 }
 
 gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
-    void** resource_out) {
+    void** resource_out, gboolean flip) {
 #if 0
   GST_INFO("VENDOR : %s", glGetString(GL_VENDOR));
   GST_INFO("RENDERER : %s", glGetString(GL_RENDERER));
@@ -254,7 +267,7 @@ gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle,
   resource->draw_frame = shared_resource_draw_frame;
 
   init_wgl_functions(gl_context);
-  init_display_shader(resource, gl_context);
+  init_display_shader(resource, gl_context, flip);
 
   if (!init_d3d_context(resource, shtex_handle)) {
     free_shared_resource(gl_context, resource);
