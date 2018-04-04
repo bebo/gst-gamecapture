@@ -213,8 +213,7 @@ static void
 shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
 
-  // or Flush()
-  resource->d3d_device_context->ClearState();
+  resource->d3d_device_context->Flush();
 
   // start new shits
   gl->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
