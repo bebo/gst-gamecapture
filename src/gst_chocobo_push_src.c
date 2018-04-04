@@ -182,7 +182,7 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
-  gst_base_src_set_do_timestamp (GST_BASE_SRC (src), TRUE);
+  gst_base_src_set_do_timestamp (GST_BASE_SRC (src), FALSE);
 }
 
 /* GObject Functions */
