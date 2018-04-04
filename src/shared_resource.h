@@ -23,9 +23,10 @@ struct _SharedResource {
   HANDLE      gl_texture_handle;
   GLuint      gl_texture;
 
-  void*       d3d_texture;
-  void*       d3d_device;
-  HANDLE      d3d_shared_handle;
+  void*                d3d_texture;
+  ID3D11Device*        d3d_device;
+  ID3D11DeviceContext* d3d_device_context;
+  HANDLE               d3d_shared_handle;
 
   // shader
   GstGLShader *display_shader;

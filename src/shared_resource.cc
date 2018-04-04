@@ -125,9 +125,7 @@ static void init_display_shader(SharedResource* resource, GstGLContext* gl_conte
 }
 
 
-static ID3D11Device* create_device_d3d11() {
-  ID3D11Device* device;
-
+static void create_device_d3d11(ID3D11Device** device, ID3D11DeviceContext** context) {
   IDXGIFactory1* factory;
   HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**) &factory);
 
@@ -147,25 +145,21 @@ static ID3D11Device* create_device_d3d11() {
 
   D3D_FEATURE_LEVEL level_used = D3D_FEATURE_LEVEL_9_3;
 
-  hr = D3D11CreateDevice(adapter, 
+  hr = D3D11CreateDevice(adapter,
       D3D_DRIVER_TYPE_UNKNOWN,
-      NULL, 
-      D3D11_CREATE_DEVICE_BGRA_SUPPORT, 
+      NULL,
+      D3D11_CREATE_DEVICE_BGRA_SUPPORT,
       d3d_feature_levels,
       sizeof(d3d_feature_levels) / sizeof(D3D_FEATURE_LEVEL),
       D3D11_SDK_VERSION,
-      &device,
-      &level_used, 
-      NULL);
+      device,
+      &level_used,
+      context);
   adapter->Release();
-
-  //GST_INFO("CreateDevice HR: 0x%08x, level_used: 0x%08x (%d)", hr,
-  //    (unsigned int) level_used, (unsigned int) level_used);
-  return device;
 }
 
 static gboolean init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
-  resource->d3d_device = create_device_d3d11();
+  create_device_d3d11(&resource->d3d_device, &resource->d3d_device_context);
   resource->d3d_shared_handle = shtex_handle;
 
   ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
@@ -218,6 +212,9 @@ static void init_gl_context(SharedResource* resource, GstGLContext* gl_context) 
 static void
 shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
+
+  // or Flush()
+  resource->d3d_device_context->ClearState();
 
   // start new shits
   gl->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -294,7 +291,11 @@ void free_shared_resource(GstGLContext* gl_context, SharedResource* resource) {
   }
 
   if (resource->d3d_device) {
-    ((ID3D11Device*) resource->d3d_device)->Release();
+    resource->d3d_device->Release();
+  }
+
+  if (resource->d3d_device_context) {
+    resource->d3d_device_context->Release();
   }
 
   if (resource->display_shader) {
