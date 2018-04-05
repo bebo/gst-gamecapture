@@ -575,12 +575,20 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     src->game_capture_config->force_scaling = 1;
     src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
 
+    uint64_t frame_interval = (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / 
+        GST_VIDEO_INFO_FPS_N(&src->out_info));
+
+    // on the graphics-hooks side, we're going to update the texture twice as often
+    // than we process the shared texture
+    frame_interval /= 2;
+
     src->game_context = game_capture_start(&src->game_context,
       src->gc_class_name->str,
       src->gc_window_name->str,
       src->game_capture_config,
-      (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / GST_VIDEO_INFO_FPS_N(&src->out_info)));
+      frame_interval);
   }
+
   gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _fill_gl,
       src);
 
