@@ -137,7 +137,7 @@ static struct game_capture *game_capture_create(GameCaptureConfig *config, uint6
   gc->config.limit_framerate = config->limit_framerate;
   gc->config.capture_overlays = config->capture_overlays;
   gc->config.anticheat_hook = inject_failed_count > 10 ? true : config->anticheat_hook;
-  gc->frame_interval = frame_interval;
+  gc->frame_interval = 0;
 
   gc->initial_config = true;
   gc->priority = config->priority;
