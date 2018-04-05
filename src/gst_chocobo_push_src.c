@@ -88,6 +88,8 @@ static gboolean gst_chocobopushsrc_unlock(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_unlock_stop(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_query(GstBaseSrc *bsrc, GstQuery *query);
 /* GstPushSrc */
+static void gst_chocobopushsrc_get_times (GstBaseSrc * basesrc,
+    GstBuffer * buffer, GstClockTime * start, GstClockTime * end);
 static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 static gboolean _find_local_gl_context(GstChocoboPushSrc *src);
@@ -124,6 +126,7 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
   // gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
   gstbasesrc_class->start = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_start);
   gstbasesrc_class->stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_stop);
+  gstbasesrc_class->get_times = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_get_times);
   gstbasesrc_class->fixate = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fixate);
   gstbasesrc_class->query = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_query);
   gstbasesrc_class->decide_allocation = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_decide_allocation);
@@ -551,6 +554,29 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
       _draw_texture_callback, src);
 }
 
+static void 
+gst_chocobopushsrc_get_times (GstBaseSrc * basesrc,
+  GstBuffer * buffer, GstClockTime * start, GstClockTime * end)
+{
+  GstChocoboPushSrc *src = GST_CHOCOBO(basesrc);
+
+  if (gst_base_src_is_live (basesrc)) {
+    GstClockTime timestamp = GST_BUFFER_TIMESTAMP (buffer);
+
+    if (GST_CLOCK_TIME_IS_VALID (timestamp)) {
+      /* get duration to calculate end time */
+      GstClockTime duration = GST_BUFFER_DURATION (buffer);
+
+      if (GST_CLOCK_TIME_IS_VALID (duration))
+        *end = timestamp + duration;
+      *start = timestamp;
+    }
+  } else {
+    *start = -1;
+    *end = -1;
+  }
+}
+
 static GstFlowReturn
 gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
@@ -773,6 +799,7 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
   }
   config = gst_buffer_pool_get_config (pool);
 
+  min = 20;
   gst_buffer_pool_config_set_params (config, caps, size, min, max);
   gst_buffer_pool_config_add_option (config, GST_BUFFER_POOL_OPTION_VIDEO_META);
   if (gst_query_find_allocation_meta (query, GST_GL_SYNC_META_API_TYPE, NULL))
