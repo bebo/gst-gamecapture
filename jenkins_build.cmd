@@ -48,6 +48,8 @@ if errorlevel 1 (
     exit /b %errorlevel%
 )
 
+"C:\Program Files\Amazon\AWSCLI\aws.exe" s3api put-object --bucket bebo-app --key repo/gst-gamecapture/%FILENAME% --body %FILENAME%
+
 if "%LIVE%" == "true" (
     "C:\Python34\python.exe" "C:\w\jenkins_uploader.py" --project %JOB_NAME% --tag %TAG% --env %ENV%
     @if errorlevel 1 (
