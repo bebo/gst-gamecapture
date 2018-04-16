@@ -503,8 +503,8 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
 
   const GstGLFuncs* gl = src->context->gl_vtable;
 
-  // TODO: what to do, when you dont have a frame from the game yet?
-  gl->ClearColor(0.92f, 0.22f, 0.25f, 1.0f);
+  // paint black if there's no game frame from the hook
+  gl->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   gl->Clear(GL_COLOR_BUFFER_BIT);
 
   return TRUE;
