@@ -1,0 +1,3 @@
+[submodule "third_party/gst-plugins-bebo"]
+	path = third_party/gst-plugins-bebo
+	url = git@github.com:bebo/gst-plugins-bebo.git
