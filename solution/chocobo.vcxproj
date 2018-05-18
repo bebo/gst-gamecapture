@@ -21,13 +21,15 @@
   <ItemGroup>
     <ClCompile Include="..\src\game_capture.cc" />
     <ClCompile Include="..\src\gst_chocobo_push_src.c" />
-    <ClCompile Include="..\src\shared_resource.cc" />
+    <ClCompile Include="..\src\shared_resource.c" />
+    <ClCompile Include="..\third_party\gst-plugins-bebo\gst-libs\gst\dxgi\gstdxgidevice.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\game_capture.h" />
     <ClInclude Include="..\src\gst_chocobo_push_src.h" />
     <ClInclude Include="..\src\shared_resource.h" />
+    <ClInclude Include="..\third_party\gst-plugins-bebo\gst-libs\gst\dxgi\gstdxgidevice.h" />
+    <ClInclude Include="..\third_party\gst-plugins-bebo\shared\config.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1BF002B8-39C7-47C3-8D5B-354BCC31E26B}</ProjectGuid>
@@ -93,10 +95,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>libgstgamecapture</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(SolutionDir)third_party\gst-plugins-bebo\gst-libs\gst;$(SolutionDir)third_party\gst-plugins-bebo\shared;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>libgstgamecapture</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(SolutionDir)third_party\gst-plugins-bebo\gst-libs\gst;$(SolutionDir)third_party\gst-plugins-bebo\shared;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -121,7 +125,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)third_party\lib\gst;$(SolutionDir)third_party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;dxguid.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,7 +159,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)third_party\lib\gst;$(SolutionDir)third_party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gstreamer-1.0.lib;gstaudio-1.0.lib;gstvideo-1.0.lib;gstbase-1.0.lib;glib-2.0.lib;gobject-2.0.lib;ipc-util.lib;gamecapture.lib;dxgi.lib;dxguid.lib;d3d11.lib;gstgl-1.0.lib;opengl32.lib;strmbase.lib;rpcrt4.lib;uuid.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

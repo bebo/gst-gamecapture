@@ -1,4 +1,5 @@
 #include "shared_resource.h"
+#include "dxgi/gstdxgidevice.h"
 
 /* *INDENT-OFF* */
 static const GLfloat flip_vertices[] = {
@@ -26,14 +27,6 @@ const static D3D_FEATURE_LEVEL d3d_feature_levels[] =
   D3D_FEATURE_LEVEL_9_3,
 };
 
-static PFNWGLDXOPENDEVICENVPROC wglDXOpenDeviceNV;
-static PFNWGLDXCLOSEDEVICENVPROC wglDXCloseDeviceNV;
-static PFNWGLDXREGISTEROBJECTNVPROC wglDXRegisterObjectNV;
-static PFNWGLDXUNREGISTEROBJECTNVPROC wglDXUnregisterObjectNV;
-static PFNWGLDXLOCKOBJECTSNVPROC wglDXLockObjectsNV;
-static PFNWGLDXUNLOCKOBJECTSNVPROC wglDXUnlockObjectsNV;
-static PFNWGLDXSETRESOURCESHAREHANDLENVPROC wglDXSetResourceShareHandleNV;
-
 static void _bind_buffer (SharedResource *resource, const GstGLFuncs *gl )
 {
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, resource->vbo_indices);
@@ -60,24 +53,8 @@ static void _unbind_buffer (SharedResource *resource, const GstGLFuncs *gl )
   gl->DisableVertexAttribArray (resource->attr_texture);
 }
 
-static void init_wgl_functions(GstGLContext* gl_context) {
-  wglDXOpenDeviceNV = (PFNWGLDXOPENDEVICENVPROC)
-    gst_gl_context_get_proc_address(gl_context, "wglDXOpenDeviceNV");
-  wglDXCloseDeviceNV = (PFNWGLDXCLOSEDEVICENVPROC)
-    gst_gl_context_get_proc_address(gl_context, "wglDXCloseDeviceNV");
-  wglDXRegisterObjectNV = (PFNWGLDXREGISTEROBJECTNVPROC)
-    gst_gl_context_get_proc_address(gl_context, "wglDXRegisterObjectNV");
-  wglDXUnregisterObjectNV = (PFNWGLDXUNREGISTEROBJECTNVPROC)
-    gst_gl_context_get_proc_address(gl_context, "wglDXUnregisterObjectNV");
-  wglDXLockObjectsNV = (PFNWGLDXLOCKOBJECTSNVPROC) 
-    gst_gl_context_get_proc_address(gl_context, "wglDXLockObjectsNV");
-  wglDXUnlockObjectsNV = (PFNWGLDXUNLOCKOBJECTSNVPROC)
-    gst_gl_context_get_proc_address(gl_context, "wglDXUnlockObjectsNV");
-  wglDXSetResourceShareHandleNV = (PFNWGLDXSETRESOURCESHAREHANDLENVPROC)
-    gst_gl_context_get_proc_address(gl_context, "wglDXSetResourceShareHandleNV");
-}
 
-static void init_display_shader(SharedResource* resource, GstGLContext* gl_context, bool flipped) {
+static void init_display_shader(SharedResource* resource, GstGLContext* gl_context, gboolean flipped) {
   GError *error = NULL;
   const GstGLFuncs* gl = gl_context->gl_vtable;
   GstGLSLStage* vert_stage = gst_glsl_stage_new_default_vertex (gl_context);
@@ -124,72 +101,34 @@ static void init_display_shader(SharedResource* resource, GstGLContext* gl_conte
   gl->BindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
+static gboolean init_d3d_context(GstGLContext * gl_context, SharedResource* resource, HANDLE shtex_handle) {
 
-static ID3D11Device* create_device_d3d11() {
-  ID3D11Device* device;
-
-  IDXGIFactory1* factory;
-  HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**) &factory);
-
-  UINT index = 0;
-  IDXGIAdapter1* adapter;
-  while (factory->EnumAdapters1(index++, &adapter) == S_OK) {
-    DXGI_ADAPTER_DESC desc;
-    hr = adapter->GetDesc(&desc);
-
-    if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
-      adapter->Release();
-      continue;
-    }
-    break;
+  GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
+  if (!ctx) {
+    GST_ERROR("missing shared context");
+    return FALSE;
   }
-  factory->Release();
+  resource->gl_device_handle = ctx->device_interop_handle;
 
-  D3D_FEATURE_LEVEL level_used = D3D_FEATURE_LEVEL_9_3;
-
-  hr = D3D11CreateDevice(adapter, 
-      D3D_DRIVER_TYPE_UNKNOWN,
-      NULL, 
-      D3D11_CREATE_DEVICE_BGRA_SUPPORT, 
-      d3d_feature_levels,
-      sizeof(d3d_feature_levels) / sizeof(D3D_FEATURE_LEVEL),
-      D3D11_SDK_VERSION,
-      &device,
-      &level_used, 
-      NULL);
-  adapter->Release();
-
-  //GST_INFO("CreateDevice HR: 0x%08x, level_used: 0x%08x (%d)", hr,
-  //    (unsigned int) level_used, (unsigned int) level_used);
-  return device;
-}
-
-static gboolean init_d3d_context(SharedResource* resource, HANDLE shtex_handle) {
-  resource->d3d_device = create_device_d3d11();
-  resource->d3d_shared_handle = shtex_handle;
-
-  ID3D11Device* device = (ID3D11Device*) resource->d3d_device;
-  HRESULT hr = device->OpenSharedResource(shtex_handle,
-      __uuidof(ID3D11Texture2D), (void**)&resource->d3d_texture);
+  HRESULT hr = (ctx->d3d11_device)->lpVtbl->OpenSharedResource(
+      ctx->d3d11_device,
+      shtex_handle,
+      &IID_ID3D11Texture2D,
+      (void**)&resource->d3d_texture);
 
   return (hr == S_OK);
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
-
-  BOOL success = wglDXSetResourceShareHandleNV(resource->d3d_texture,
-      resource->d3d_shared_handle);
-  // GST_INFO("wglDXSetResourceShareHandleNV success: %d", success != FALSE);
+  GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
 
   gl->GenTextures(1, &resource->gl_texture);
   if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
 
-  resource->gl_texture_handle = wglDXRegisterObjectNV(resource->gl_device_handle,
+  resource->gl_texture_handle = ctx->wglDXRegisterObjectNV(resource->gl_device_handle,
       resource->d3d_texture, resource->gl_texture,
       GL_TEXTURE_2D, WGL_ACCESS_READ_WRITE_NV);
-  // GST_INFO("wglDXRegisterObjectNV texture handle: %llu texture: %llu", 
-  //   resource->gl_texture_handle, resource->gl_texture);
 
   gl->BindTexture(GL_TEXTURE_2D, resource->gl_texture);
   if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
@@ -210,14 +149,10 @@ static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context
   if (gl->GetError() != 0) GST_ERROR("Failed glBindTexture");
 }
 
-static void init_gl_context(SharedResource* resource, GstGLContext* gl_context) {
-  resource->gl_device_handle = wglDXOpenDeviceNV(resource->d3d_device);
-  create_gl_texture(resource, gl_context);
-}
-
 static void
 shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   const GstGLFuncs* gl = gl_context->gl_vtable;
+  GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
 
   // start new shits
   gl->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -237,9 +172,9 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   gl->ActiveTexture (GL_TEXTURE0);
   gl->BindTexture(GL_TEXTURE_2D, resource->gl_texture);
 
-  wglDXLockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
+  ctx->wglDXLockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
   gl->DrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-  wglDXUnlockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
+  ctx->wglDXUnlockObjectsNV(resource->gl_device_handle, 1, &resource->gl_texture_handle);
 
   gl->BindTexture (GL_TEXTURE_2D, 0);
 
@@ -266,15 +201,16 @@ gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle,
   SharedResource* resource = g_new0(SharedResource, 1);
   resource->draw_frame = shared_resource_draw_frame;
 
-  init_wgl_functions(gl_context);
   init_display_shader(resource, gl_context, flip);
 
-  if (!init_d3d_context(resource, shtex_handle)) {
+  GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
+
+  if (!init_d3d_context(gl_context, resource, shtex_handle)) {
     free_shared_resource(gl_context, resource);
     return FALSE;
   }
 
-  init_gl_context(resource, gl_context);
+  create_gl_texture(resource, gl_context);
 
   *resource_out = resource;
   return TRUE;
@@ -286,15 +222,10 @@ void free_shared_resource(GstGLContext* gl_context, SharedResource* resource) {
 
   if (resource->gl_device_handle) {
     if (resource->gl_texture) {
-      wglDXUnregisterObjectNV(resource->gl_device_handle, 
+      GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
+      ctx->wglDXUnregisterObjectNV(resource->gl_device_handle, 
           resource->gl_texture_handle);
     }
-
-    wglDXCloseDeviceNV(resource->gl_device_handle);
-  }
-
-  if (resource->d3d_device) {
-    ((ID3D11Device*) resource->d3d_device)->Release();
   }
 
   if (resource->display_shader) {

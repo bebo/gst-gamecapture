@@ -22,6 +22,7 @@
 
 #include "gst_chocobo_push_src.h"
 #include "gamecapture/graphics-hook-info.h"
+#include "dxgi/gstdxgidevice.h"
 
 #include <stdbool.h>
 
@@ -94,7 +95,7 @@ static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 static gboolean _find_local_gl_context(GstChocoboPushSrc *src);
 static gboolean _gl_context_init_shader(GstChocoboPushSrc *src);
-static void _gl_init(GstGLContext *context, GstChocoboPushSrc *src);
+static void _gl_init_fbo(GstGLContext *context, GstChocoboPushSrc *src);
 
 
 #define _do_init \
@@ -540,6 +541,7 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
   if (src->shtex_handle != gc_shtex_handle) {
     src->shtex_handle = gc_shtex_handle;
     struct game_capture *gc = (struct game_capture*) src->game_context;
+    gst_chocobopushsrc_ensure_gl_context(src);
     if (!init_shared_resource(src->context, 
           gc_shtex_handle, 
           &src->shared_resource,
@@ -720,11 +722,18 @@ _gl_context_init_shader(GstChocoboPushSrc *src)
 
 
 static void 
-_gl_init(GstGLContext *context, GstChocoboPushSrc *src)
+_gl_init_fbo(GstGLContext *context, GstChocoboPushSrc *src)
 {
   src->fbo = gst_gl_framebuffer_new_with_default_depth(src->context,
       GST_VIDEO_INFO_WIDTH(&src->out_info),
       GST_VIDEO_INFO_HEIGHT(&src->out_info));
+}
+
+
+static gboolean
+gst_chocobopushsrc_ensure_gl_context(GstChocoboPushSrc * self)
+{
+    return gst_dxgi_device_ensure_gl_context(self, &self->context, &self->other_context, &self->display);
 }
 
 static gboolean
@@ -745,35 +754,16 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
   gst_gl_display_filter_gl_api (src->display, SUPPORTED_GL_APIS);
 
   _find_local_gl_context (src);
+  gst_chocobopushsrc_ensure_gl_context(src);
 
-  if (!src->context) {
-    GST_OBJECT_LOCK (src->display);
-    do {
-      if (src->context) {
-        gst_object_unref (src->context);
-        src->context = NULL;
-      }
-      /* just get a GL context.  we don't care */
-      src->context =
-        gst_gl_display_get_gl_context_for_thread (src->display, NULL);
-      if (!src->context) {
-        if (!gst_gl_display_create_context (src->display, src->other_context,
-              &src->context, &error)) {
-          GST_OBJECT_UNLOCK (src->display);
-          goto context_error;
-        }
-      }
-    } while (!gst_gl_display_add_context (src->display, src->context));
-    GST_OBJECT_UNLOCK (src->display);
-  }
 
   if ((gst_gl_context_get_gl_api (src->context) & SUPPORTED_GL_APIS) == 0)
     goto unsupported_gl_api;
 
   gst_gl_context_thread_add (src->context,
-      (GstGLContextThreadFunc) _gl_init, src);
+      (GstGLContextThreadFunc) _gl_init_fbo, src);
   if (!src->fbo)
-    goto context_error;
+    GST_ERROR("COULD NOT ALLOCATE FBO");
 
   gst_query_parse_allocation (query, &caps, NULL);
 
@@ -832,20 +822,6 @@ unsupported_gl_api:
 
     g_free (supported_gl_api_str);
     g_free (gl_api_str);
-    return FALSE;
-  }
-context_error:
-  {
-    if (error) {
-      GST_ELEMENT_ERROR (src, RESOURCE, NOT_FOUND, ("%s", error->message),
-          (NULL));
-      g_clear_error (&error);
-    } else {
-      GST_ELEMENT_ERROR (src, RESOURCE, NOT_FOUND, (NULL), (NULL));
-    }
-    if (src->context)
-      gst_object_unref (src->context);
-    src->context = NULL;
     return FALSE;
   }
 }

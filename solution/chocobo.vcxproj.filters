@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\gst_chocobo_push_src.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -27,15 +24,24 @@
     <ClInclude Include="..\src\game_capture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\third_party\gst-plugins-bebo\shared\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\gst-plugins-bebo\gst-libs\gst\dxgi\gstdxgidevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\gst_chocobo_push_src.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\shared_resource.cc">
+    <ClCompile Include="..\src\game_capture.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\game_capture.cc">
+    <ClCompile Include="..\third_party\gst-plugins-bebo\gst-libs\gst\dxgi\gstdxgidevice.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\shared_resource.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
