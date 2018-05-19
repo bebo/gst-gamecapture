@@ -540,10 +540,12 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
   if (src->shtex_handle != gc_shtex_handle) {
     src->shtex_handle = gc_shtex_handle;
     struct game_capture *gc = (struct game_capture*) src->game_context;
-    if (!init_shared_resource(src->context, 
+
+    if (!init_shared_resource(src->context,
           gc_shtex_handle, 
           &src->shared_resource,
           gc->global_hook_info->flip)) {
+      src->shtex_handle = NULL;
       gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
           _draw_texture_callback_no_game_frame, src);
       return;

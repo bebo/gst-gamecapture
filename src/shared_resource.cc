@@ -257,12 +257,6 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
 
 gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
     void** resource_out, gboolean flip) {
-#if 0
-  GST_INFO("VENDOR : %s", glGetString(GL_VENDOR));
-  GST_INFO("RENDERER : %s", glGetString(GL_RENDERER));
-  GST_INFO("VERSION : %s", glGetString(GL_VERSION));
-#endif
-
   SharedResource* resource = g_new0(SharedResource, 1);
   resource->draw_frame = shared_resource_draw_frame;
 
