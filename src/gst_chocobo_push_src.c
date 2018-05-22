@@ -505,7 +505,7 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
   const GstGLFuncs* gl = src->context->gl_vtable;
 
   // paint black if there's no game frame from the hook
-  gl->ClearColor(0.10f, 0.10f, 0.10f, 1.0f);
+  gl->ClearColor(0.10f, 0.10f, 0.10f, 0.3f);
   gl->Clear(GL_COLOR_BUFFER_BIT);
 
   return TRUE;
@@ -546,6 +546,7 @@ _fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
           gc_shtex_handle, 
           &src->shared_resource,
           gc->global_hook_info->flip)) {
+      src->shtex_handle = NULL;
       gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
           _draw_texture_callback_no_game_frame, src);
       return;
