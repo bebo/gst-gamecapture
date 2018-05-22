@@ -1,5 +1,6 @@
 @ECHO ON
 set errorlevel=
+set TEMP_FILENAME=%TEMP%\%JOB_NAME%_%TAG%.zip
 set FILENAME=%TEMP%\%JOB_NAME%_%TAG%.zip
 
 rmdir /s /q dist
@@ -41,14 +42,14 @@ if errorlevel 1 (
     exit /b %errorlevel%
 )
 
-"C:\Program Files\7-Zip\7z.exe" a -r %FILENAME% -w .\dist\* -mem=AES256
+"C:\Program Files\7-Zip\7z.exe" a -r %TEMP_FILENAME% -w .\dist\* -mem=AES256
 
 @if errorlevel 1 (
     echo "zip failed with %errorlevel%"
     exit /b %errorlevel%
 )
 
-"C:\Program Files\Amazon\AWSCLI\aws.exe" s3api put-object --bucket bebo-app --key repo/%JOB_NAME%/%FILENAME% --body %FILENAME%
+"C:\Program Files\Amazon\AWSCLI\aws.exe" s3api put-object --bucket bebo-app --key repo/%JOB_NAME%/%FILENAME% --body %TEMP_FILENAME%
 @if errorlevel 1 (
     echo "failed to upload to s3 with %errorlevel%"
     exit /b %errorlevel%
