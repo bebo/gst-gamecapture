@@ -42,7 +42,7 @@ extern "C" {
   struct graphics_offsets offsets64 = { 0 };
 
   char *bebo_find_file(const char *file_c) {
-    std::string dll_path(dll_inject_path ? 
+    std::string dll_path(dll_inject_path ?
         dll_inject_path : "C:\\Program Files (x86)\\Bebo\\bebodlls");
     const char* dll_path_c = dll_path.c_str();
     char* result = (char*) bmalloc(strlen(dll_path_c) + strlen(file_c) + 1);
@@ -122,6 +122,10 @@ static inline HANDLE open_hook_info(struct game_capture *gc)
   return open_map_plus_id(gc, SHMEM_HOOK_INFO, gc->process_id);
 }
 
+static inline uint64_t get_next_retry_time(uint64_t milliseconds) {
+  return os_gettime_ns() + (milliseconds * 1000000);
+}
+
 static struct game_capture *game_capture_create(GameCaptureConfig *config, uint64_t frame_interval)
 {
   struct game_capture *gc = (struct game_capture*) g_new0(game_capture, 1);
@@ -142,6 +146,7 @@ static struct game_capture *game_capture_create(GameCaptureConfig *config, uint6
   gc->initial_config = true;
   gc->priority = config->priority;
   gc->wait_for_target_startup = false;
+  gc->next_retry_time_ns = 0;
   gc->window = config->window;
 
   return gc;
@@ -208,10 +213,9 @@ static void setup_window(struct game_capture *gc, HWND window)
    * (such as steam) need a little bit of time to load.  ultimately this
    * helps prevent crashes */
   if (gc->wait_for_target_startup) {
-    gc->retry_interval = 3.0f;
+    gc->next_retry_time_ns = get_next_retry_time(3000); // 3 seconds
     gc->wait_for_target_startup = false;
-  }
-  else {
+  } else {
     gc->next_window = window;
   }
 }
@@ -586,8 +590,7 @@ static inline bool init_texture_mutexes(struct game_capture *gc)
         gc->retrying = 2;
         info("hook not loaded yet, retrying..");
       }
-    }
-    else {
+    } else {
       warn("failed to open texture mutexes: %lu",
           GetLastError());
     }
@@ -811,8 +814,9 @@ static void stop_capture(struct game_capture *gc)
   close_handle(&gc->texture_mutexes[0]);
   close_handle(&gc->texture_mutexes[1]);
 
-  if (gc->active)
+  if (gc->active) {
     info("game capture stopped");
+  }
 
   gc->wait_for_target_startup = false;
   gc->active = false;
@@ -827,8 +831,7 @@ static void try_hook(struct game_capture *gc)
 {
   if (0 && gc->config.mode == CAPTURE_MODE_ANY) {
     get_fullscreen_window(gc);
-  }
-  else {
+  } else {
     get_selected_window(gc);
   }
 
@@ -852,8 +855,7 @@ static void try_hook(struct game_capture *gc)
     if (!init_hook(gc)) {
       stop_capture(gc);
     }
-  }
-  else {
+  } else {
     gc->active = false;
   }
 }
@@ -904,9 +906,10 @@ void set_fps(void **data, uint64_t frame_interval) {
 }
 
 void* game_capture_start(void **data, 
-    char* window_class_name_c, char* window_name_c, 
+    char* window_class_name_c, char* window_name_c,
     GameCaptureConfig *config, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
+
   if (gc == NULL) {
     HWND hwnd = NULL;
     window_priority priority = WINDOW_PRIORITY_EXE;
@@ -917,16 +920,10 @@ void* game_capture_start(void **data,
     if (lstrlenW(window_class_name) > 0 &&
         lstrlenW(window_name) > 0) {
       hwnd = FindWindowW(window_class_name, window_name);
-    }
-
-    if (hwnd == NULL &&
-        lstrlenW(window_class_name) > 0) {
+    } else if (lstrlenW(window_class_name) > 0) {
       hwnd = FindWindowW(window_class_name, NULL);
       priority = WINDOW_PRIORITY_CLASS;
-    }
-
-    if (hwnd == NULL &&
-        lstrlenW(window_name) > 0) {
+    } else if (lstrlenW(window_name) > 0) {
       hwnd = FindWindowW(NULL, window_name);
       priority = WINDOW_PRIORITY_TITLE;
     }
@@ -955,12 +952,18 @@ void* game_capture_start(void **data,
     gc->priority = priority;
   }
 
-  try_hook(gc);
-  if (gc->active || gc->retrying) {
+  uint64_t current_time_ns = os_gettime_ns();
+  if (current_time_ns < gc->next_retry_time_ns) {
     return gc;
   }
 
-  return NULL;
+  try_hook(gc);
+
+  if (!gc->active || !gc->retrying) {
+    gc->next_retry_time_ns = get_next_retry_time(5000); // 5 seconds
+  }
+
+  return gc;
 }
 
 enum capture_result {

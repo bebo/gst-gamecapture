@@ -49,9 +49,7 @@ struct game_capture {
   DWORD                         thread_id;
   HWND                          next_window;
   HWND                          window;
-  float                         retry_time;
-  float                         fps_reset_time;
-  float                         retry_interval;
+  uint64_t                      next_retry_time_ns;
   struct dstr                   title;
   struct dstr                   klass;
   struct dstr                   executable;
@@ -100,7 +98,7 @@ struct game_capture {
 gboolean game_capture_is_ready(void * data);
 gboolean game_capture_is_active(void * data);
 void* game_capture_get_shtex_handle(void * data);
-void* game_capture_start(void **data, 
+void* game_capture_start(void **data,
     char* window_class_name, char* window_name,
     GameCaptureConfig *config, uint64_t frame_interval);
 gboolean game_capture_tick(void * data);
