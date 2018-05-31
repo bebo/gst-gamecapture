@@ -632,12 +632,15 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     GstClockTime base_time = GST_ELEMENT_CAST(psrc)->base_time;
     GstClockTime running_time = gst_clock_get_time(clock) - base_time;
     guint time_per_frame = 1000000000 / src->fps;
-    guint sleep_time = time_per_frame + src->last_frame_time - running_time;
+    gint sleep_time = time_per_frame + src->last_frame_time - running_time;
+    gint sleep_time_ms = sleep_time / 1000000;
+    GST_LOG("sleep_time: %d", sleep_time_ms);
+    GST_LOG("running_time: %d", running_time / 1000000);
+
     if (sleep_time > 0) {
-      guint sleep_time_ms = sleep_time / 1000000;
       Sleep(sleep_time_ms);
     }
-    src->last_frame_time = gst_clock_get_time(clock) - base_time;
+    src->last_frame_time = gst_clock_get_time(clock) - GST_ELEMENT_CAST(psrc)->base_time;
     gst_object_unref(clock);
   }
   return GST_FLOW_OK;
