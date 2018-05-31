@@ -89,8 +89,6 @@ static gboolean gst_chocobopushsrc_unlock(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_unlock_stop(GstBaseSrc *src);
 static gboolean gst_chocobopushsrc_query(GstBaseSrc *bsrc, GstQuery *query);
 /* GstPushSrc */
-static void gst_chocobopushsrc_get_times (GstBaseSrc * basesrc,
-    GstBuffer * buffer, GstClockTime * start, GstClockTime * end);
 static GstFlowReturn gst_chocobopushsrc_fill(GstPushSrc *src, GstBuffer *buf);
 
 static gboolean _find_local_gl_context(GstChocoboPushSrc *src);
@@ -127,7 +125,7 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
   // gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_unlock_stop);
   gstbasesrc_class->start = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_start);
   gstbasesrc_class->stop = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_stop);
-  gstbasesrc_class->get_times = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_get_times);
+  //gstbasesrc_class->get_times = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_get_times);
   gstbasesrc_class->fixate = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_fixate);
   gstbasesrc_class->query = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_query);
   gstbasesrc_class->decide_allocation = GST_DEBUG_FUNCPTR(gst_chocobopushsrc_decide_allocation);
@@ -182,11 +180,12 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->width = DEFAULT_WIDTH;
   src->height = DEFAULT_HEIGHT;
   src->fps = DEFAULT_FPS;
+  src->last_frame_time = 0;
 
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
-  gst_base_src_set_do_timestamp (GST_BASE_SRC (src), FALSE);
+  gst_base_src_set_do_timestamp (GST_BASE_SRC (src), TRUE);
 }
 
 /* GObject Functions */
@@ -562,7 +561,6 @@ gst_chocobopushsrc_get_times (GstBaseSrc * basesrc,
   GstBuffer * buffer, GstClockTime * start, GstClockTime * end)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(basesrc);
-
   if (gst_base_src_is_live (basesrc)) {
     GstClockTime timestamp = GST_BUFFER_TIMESTAMP (buffer);
 
@@ -584,7 +582,6 @@ static GstFlowReturn
 gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
-
   GstClockTime next_time;
   GstVideoFrame out_frame;
   GstGLSyncMeta *sync_meta;
@@ -628,22 +625,21 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   if (sync_meta)
     gst_gl_sync_meta_set_sync_point (sync_meta, src->context);
 
-  GST_BUFFER_TIMESTAMP (buffer) = src->timestamp_offset + src->running_time;
-  GST_BUFFER_OFFSET (buffer) = src->n_frames;
-  src->n_frames++;
-  GST_BUFFER_OFFSET_END (buffer) = src->n_frames;
-  if (src->out_info.fps_n) {
-    next_time = gst_util_uint64_scale_int (src->n_frames * GST_SECOND,
-        src->out_info.fps_d, src->out_info.fps_n);
-    GST_BUFFER_DURATION (buffer) = next_time - src->running_time;
-  } else {
-    next_time = src->timestamp_offset;
-    /* NONE means forever */
-    GST_BUFFER_DURATION (buffer) = GST_CLOCK_TIME_NONE;
+  // Wait so that we don't exceed the framerate
+  GstClock *clock = GST_ELEMENT_CLOCK(psrc);
+  if (clock != NULL) {
+    gst_object_ref(clock);
+    GstClockTime base_time = GST_ELEMENT_CAST(psrc)->base_time;
+    GstClockTime running_time = gst_clock_get_time(clock) - base_time;
+    guint time_per_frame = 1000000000 / src->fps;
+    guint sleep_time = time_per_frame + src->last_frame_time - running_time;
+    if (sleep_time > 0) {
+      guint sleep_time_ms = sleep_time / 1000000;
+      Sleep(sleep_time_ms);
+    }
+    src->last_frame_time = gst_clock_get_time(clock) - base_time;
+    gst_object_unref(clock);
   }
-
-  src->running_time = next_time;
-
   return GST_FLOW_OK;
 }
 
