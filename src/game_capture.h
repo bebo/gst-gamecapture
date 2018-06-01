@@ -95,9 +95,9 @@ struct game_capture {
   };
 };
 
+gboolean game_capture_shmem_draw_frame(struct game_capture* ga, uint8_t* data, uint32_t stride);
 gboolean game_capture_is_ready(void * data);
 gboolean game_capture_is_active(void * data);
-void* game_capture_get_shtex_handle(void * data);
 void* game_capture_start(void **data,
     char* window_class_name, char* window_name,
     GameCaptureConfig *config, uint64_t frame_interval);

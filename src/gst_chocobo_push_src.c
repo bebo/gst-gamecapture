@@ -510,50 +510,72 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
   return TRUE;
 }
 
-static void
-_fill_gl(GstGLContext *context, GstChocoboPushSrc *src)
+static gboolean
+shared_memory_capture(GstChocoboPushSrc *src)
 {
-  gboolean gl_result = FALSE;
+  struct game_capture *gc = (struct game_capture*) src->game_context;
 
-  // check game_capture first to see if it's there
-  if (!src->game_context) {
-    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-        _draw_texture_callback_no_game_frame, src);
+  GstMapInfo map_info;
+  if (!gst_memory_map(src->out_tex, &map_info,
+        GST_MAP_WRITE)) {
+    src->got_frame = FALSE;
+    return FALSE;
+  }
+
+  guint stride = GST_VIDEO_INFO_PLANE_STRIDE(&src->out_info, 0);
+  memset(map_info.data, 0, map_info.size);
+  src->got_frame = game_capture_shmem_draw_frame(gc, map_info.data, stride);
+  gst_memory_unmap(src->out_tex, &map_info);
+  return src->got_frame;
+}
+
+static void
+_gl_shared_texture_capture(GstGLContext *context, GstChocoboPushSrc *src)
+{
+  struct game_capture *gc = (struct game_capture*) src->game_context;
+
+  if (!gc->shtex_data) {
+    src->got_frame = FALSE;
     return;
   }
 
-  if (game_capture_is_active(src->game_context) &&
-      !game_capture_tick(src->game_context)) {
-    src->game_context = NULL;
-    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-        _draw_texture_callback_no_game_frame, src);
-    return;
-  }
-
-  void* gc_shtex_handle = game_capture_get_shtex_handle(src->game_context);
+  uint32_t gc_shtex_handle =  gc->shtex_data->tex_handle;
   if (!gc_shtex_handle) {
-    gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-        _draw_texture_callback_no_game_frame, src);
+    src->got_frame = FALSE;
     return;
   }
 
   if (src->shtex_handle != gc_shtex_handle) {
     src->shtex_handle = gc_shtex_handle;
-    struct game_capture *gc = (struct game_capture*) src->game_context;
     gst_chocobopushsrc_ensure_gl_context(src);
-    if (!init_shared_resource(src->context, 
-          gc_shtex_handle, 
+    if (!init_shared_resource(src->context,
+          gc_shtex_handle,
           &src->shared_resource,
           gc->global_hook_info->flip)) {
       src->shtex_handle = NULL;
-      gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
-          _draw_texture_callback_no_game_frame, src);
+      src->got_frame = FALSE;
       return;
     }
   }
 
-  gl_result = gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+  gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
       _draw_texture_callback, src);
+  src->got_frame = TRUE;
+  return;
+}
+
+static gboolean
+shared_texture_capture(GstChocoboPushSrc *src)
+{
+  gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _gl_shared_texture_capture, src);
+  return src->got_frame;
+}
+
+static void
+_fill_gl_no_game_frame(GstGLContext *context, GstChocoboPushSrc *src)
+{
+  gst_gl_framebuffer_draw_to_texture(src->fbo, src->out_tex,
+          _draw_texture_callback_no_game_frame, src);
 }
 
 static void 
@@ -589,7 +611,6 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   if (!gst_video_frame_map (&out_frame,
         &src->out_info, buffer,
         GST_MAP_WRITE | GST_MAP_GL)) {
-
     return GST_FLOW_NOT_NEGOTIATED;
   }
 
@@ -601,7 +622,7 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     src->game_capture_config->force_scaling = 1;
     src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
 
-    uint64_t frame_interval = (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL / 
+    uint64_t frame_interval = (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL /
         GST_VIDEO_INFO_FPS_N(&src->out_info));
 
     // on the graphics-hooks side, we're going to update the texture twice as often
@@ -615,8 +636,24 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
       frame_interval);
   }
 
-  gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _fill_gl,
-      src);
+  src->got_frame = FALSE;
+  if (game_capture_is_active(src->game_context)) {
+    if (game_capture_tick(src->game_context)) {
+      struct game_capture *gc = (struct game_capture*) src->game_context;
+      if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
+        shared_memory_capture(src);
+      } else {
+        shared_texture_capture(src);
+      }
+    } else {
+      src->game_context = NULL;
+    }
+  }
+
+  if (!src->got_frame) {
+    gst_gl_context_thread_add(src->context, (GstGLContextThreadFunc) _fill_gl_no_game_frame,
+        src);
+  }
 
   gst_video_frame_unmap (&out_frame);
 
