@@ -777,7 +777,7 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
     gst_video_info_init (&vinfo);
     gst_video_info_from_caps (&vinfo, caps);
     size = vinfo.size;
-    min = max = 0;
+    min = max = 3;
     update_pool = FALSE;
   }
 
@@ -789,7 +789,7 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
   }
   config = gst_buffer_pool_get_config (pool);
 
-  min = 20;
+  min = max = 3;
   gst_buffer_pool_config_set_params (config, caps, size, min, max);
   gst_buffer_pool_config_add_option (config, GST_BUFFER_POOL_OPTION_VIDEO_META);
   if (gst_query_find_allocation_meta (query, GST_GL_SYNC_META_API_TYPE, NULL))
