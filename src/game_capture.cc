@@ -8,6 +8,7 @@
 #include <string>
 #include <dxgi.h>
 #include <ipc-util/pipe.h>
+#include <libyuv/convert_from_argb.h>
 #include "gamecapture/graphics-hook-info.h"
 #include "gamecapture/bmem.h"
 #include "gamecapture/dstr.h"
@@ -878,21 +879,6 @@ gboolean game_capture_is_active(void * data) {
   return gc->active;
 }
 
-void* game_capture_get_shtex_handle(void * data) {
-    if (data == NULL) {
-    return NULL;
-  }
-
-  struct game_capture *gc = (game_capture *)data;
-
-  // check active or not
-  if (!gc->shtex_data) {
-    return NULL;
-  }
-
-  return (void*) gc->shtex_data->tex_handle;
-}
-
 void set_fps(void **data, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
 
@@ -1013,12 +999,14 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 static inline bool init_shmem_capture(struct game_capture *gc)
 {
-  return false;
+  gc->texture_buffers[0] = (uint8_t*)gc->data + gc->shmem_data->tex1_offset;
+  gc->texture_buffers[1] = (uint8_t*)gc->data + gc->shmem_data->tex2_offset;
+  gc->convert_16bit = NULL; //is_16bit_format(gc->global_hook_info->format);
+  return true;
 }
 
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
-  // GST_INFO("init_shtex_capture: %llu", gc->shtex_data->tex_handle);
   return true;
 }
 
@@ -1095,4 +1083,80 @@ wchar_t *get_wc(const char *c) {
   return wc;
 }
 
+gboolean game_capture_shmem_draw_frame(struct game_capture* gc, uint8_t* dst_data, uint32_t dst_stride) {
+  HANDLE mutex;
+  int cur_texture;
+  int next_texture;
 
+  if (!gc->shmem_data) {
+    return FALSE;
+  }
+
+  cur_texture = gc->shmem_data->last_tex;
+  if (cur_texture < 0 || cur_texture > 1)
+    return false;
+
+  next_texture = cur_texture == 1 ? 0 : 1;
+  if (object_signalled(gc->texture_mutexes[cur_texture])) {
+    mutex = gc->texture_mutexes[cur_texture];
+  } else if (object_signalled(gc->texture_mutexes[next_texture])) {
+    mutex = gc->texture_mutexes[next_texture];
+    cur_texture = next_texture;
+  } else {
+    return false;
+  }
+
+  if (gc->convert_16bit) {
+    error("copy_shmem_text 16 bit - not handled");
+    // copy_16bit_tex(gc, cur_texture, pData, pitch);
+  } else {
+    const uint8* src_frame = gc->texture_buffers[cur_texture];
+    int src_stride_frame = gc->pitch;
+    int width = gc->cx;
+    int height = gc->cy;
+
+    if (gc->global_hook_info->flip) {
+      height = -height;
+    }
+
+    int err = 0;
+    if (gc->global_hook_info->format == DXGI_FORMAT_R8G8B8A8_UNORM) {
+      // Overwatch
+      // ABGR -> ABGR
+      err = libyuv::ARGBCopy(src_frame,
+          src_stride_frame,
+          dst_data,
+          dst_stride,
+          width,
+          height);
+    } else if (gc->global_hook_info->format == DXGI_FORMAT_B8G8R8A8_UNORM) {
+      // Hearthstone
+      // opengl / minecraft (javaw.exe)
+      err = libyuv::ARGBToABGR(src_frame,
+          src_stride_frame,
+          dst_data,
+          dst_stride,
+          width,
+          height);
+    } else if (gc->global_hook_info->format == DXGI_FORMAT_B8G8R8X8_UNORM) {
+      // League Of Legends 7.2.17
+      err = libyuv::ARGBToABGR(src_frame,
+          src_stride_frame,
+          dst_data,
+          dst_stride,
+          width,
+          height);
+    } else if (gc->global_hook_info->format == DXGI_FORMAT_R10G10B10A2_UNORM) {
+      error("Unknown DXGI FORMAT %d", gc->global_hook_info->format);
+    } else {
+      error("Unknown DXGI FORMAT %d", gc->global_hook_info->format);
+    }
+
+    if (err) {
+      error("yuv conversion failed");
+    }
+  }
+
+  ReleaseMutex(mutex);
+  return TRUE;
+}
