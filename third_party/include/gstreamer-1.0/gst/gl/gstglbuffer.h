@@ -21,16 +21,12 @@
 #ifndef _GST_GL_BUFFER_H_
 #define _GST_GL_BUFFER_H_
 
-#include <gst/gst.h>
-#include <gst/gstallocator.h>
-#include <gst/gstmemory.h>
-
 #include <gst/gl/gstglbasememory.h>
 
 G_BEGIN_DECLS
 
 #define GST_TYPE_GL_BUFFER_ALLOCATOR (gst_gl_buffer_allocator_get_type())
-GST_EXPORT
+GST_GL_API
 GType gst_gl_buffer_allocator_get_type(void);
 
 #define GST_IS_GL_BUFFER_ALLOCATOR(obj)              (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_GL_ALLOCATOR))
@@ -61,9 +57,14 @@ struct _GstGLBuffer
 typedef struct _GstGLBufferAllocationParams GstGLBufferAllocationParams;
 
 #define GST_TYPE_GL_BUFFER_ALLOCATION_PARAMS (gst_gl_buffer_allocation_params_get_type())
-GST_EXPORT
+GST_GL_API
 GType gst_gl_buffer_allocation_params_get_type (void);
 
+/**
+ * GST_GL_ALLOCATION_PARAMS_ALLOC_FLAG_BUFFER:
+ *
+ * GL allocation flag indicating the allocation of a GL buffer.
+ */
 #define GST_GL_ALLOCATION_PARAMS_ALLOC_FLAG_BUFFER (1 << 4)
 
 /**
@@ -83,7 +84,7 @@ struct _GstGLBufferAllocationParams
   gpointer                  _padding[GST_PADDING];
 };
 
-GST_EXPORT
+GST_GL_API
 GstGLBufferAllocationParams *   gst_gl_buffer_allocation_params_new     (GstGLContext * context,
                                                                          gsize alloc_size,
                                                                          GstAllocationParams * alloc_params,
@@ -91,9 +92,9 @@ GstGLBufferAllocationParams *   gst_gl_buffer_allocation_params_new     (GstGLCo
                                                                          guint gl_usage);
 
 /**
- * GstGLBufferAllocator
+ * GstGLBufferAllocator:
  *
- * Opaque #GstGLAllocator struct
+ * Opaque #GstGLBufferAllocator struct
  */
 struct _GstGLBufferAllocator
 {
@@ -116,6 +117,11 @@ struct _GstGLBufferAllocatorClass
   gpointer _padding[GST_PADDING];
 };
 
+/**
+ * GST_CAPS_FEATURE_MEMORY_GL_BUFFER:
+ *
+ * Name of the caps feature indicating the use of GL buffers
+ */
 #define GST_CAPS_FEATURE_MEMORY_GL_BUFFER "memory:GLBuffer"
 
 /**
@@ -125,9 +131,9 @@ struct _GstGLBufferAllocatorClass
  */
 #define GST_GL_BUFFER_ALLOCATOR_NAME   "GLBuffer"
 
-GST_EXPORT
+GST_GL_API
 void          gst_gl_buffer_init_once (void);
-GST_EXPORT
+GST_GL_API
 gboolean      gst_is_gl_buffer        (GstMemory * mem);
 
 G_END_DECLS

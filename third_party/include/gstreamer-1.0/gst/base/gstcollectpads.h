@@ -24,6 +24,7 @@
 #define __GST_COLLECT_PADS_H__
 
 #include <gst/gst.h>
+#include <gst/base/base-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -136,7 +137,7 @@ typedef enum {
  * @pos: position in the buffer
  * @segment: last segment received.
  * @dts: the signed version of the DTS converted to running time. To access
- *       this memeber, use %GST_COLLECT_PADS_DTS macro. (Since 1.6)
+ *       this member, use %GST_COLLECT_PADS_DTS macro. (Since 1.6)
  *
  * Structure used by the collect_pads.
  */
@@ -252,7 +253,7 @@ typedef gboolean (*GstCollectPadsQueryFunction)        (GstCollectPads *pads, Gs
  * @pads: a #GstCollectPads
  * @data: a #GstCollectData
  * @inbuffer: (transfer full): the input #GstBuffer
- * @outbuffer: the output #GstBuffer
+ * @outbuffer: (out): the output #GstBuffer
  * @user_data: user data
  *
  * A function that will be called when @inbuffer is received on the pad managed
@@ -339,73 +340,111 @@ struct _GstCollectPadsClass {
   gpointer _gst_reserved[GST_PADDING];
 };
 
-GType gst_collect_pads_get_type(void);
+GST_BASE_API
+GType           gst_collect_pads_get_type (void);
 
 /* creating the object */
-GstCollectPads*        gst_collect_pads_new           (void);
+
+GST_BASE_API
+GstCollectPads* gst_collect_pads_new      (void);
 
 /* set the callbacks */
+
+GST_BASE_API
 void            gst_collect_pads_set_function         (GstCollectPads *pads,
                                                        GstCollectPadsFunction func,
                                                        gpointer user_data);
+GST_BASE_API
 void            gst_collect_pads_set_buffer_function  (GstCollectPads *pads,
                                                        GstCollectPadsBufferFunction func,
                                                        gpointer user_data);
+GST_BASE_API
 void            gst_collect_pads_set_event_function   (GstCollectPads *pads,
                                                        GstCollectPadsEventFunction func,
                                                        gpointer user_data);
+GST_BASE_API
 void            gst_collect_pads_set_query_function   (GstCollectPads *pads,
                                                        GstCollectPadsQueryFunction func,
                                                        gpointer user_data);
+GST_BASE_API
 void            gst_collect_pads_set_compare_function (GstCollectPads *pads,
                                                        GstCollectPadsCompareFunction func,
                                                        gpointer user_data);
+GST_BASE_API
 void            gst_collect_pads_set_clip_function    (GstCollectPads *pads,
                                                        GstCollectPadsClipFunction clipfunc,
                                                        gpointer user_data);
+GST_BASE_API
 void            gst_collect_pads_set_flush_function    (GstCollectPads *pads,
                                                        GstCollectPadsFlushFunction func,
                                                        gpointer user_data);
 
 /* pad management */
+
+GST_BASE_API
 GstCollectData* gst_collect_pads_add_pad       (GstCollectPads *pads, GstPad *pad, guint size,
                                                 GstCollectDataDestroyNotify destroy_notify,
                                                 gboolean lock);
+GST_BASE_API
 gboolean        gst_collect_pads_remove_pad    (GstCollectPads *pads, GstPad *pad);
 
 /* start/stop collection */
+
+GST_BASE_API
 void            gst_collect_pads_start         (GstCollectPads *pads);
+
+GST_BASE_API
 void            gst_collect_pads_stop          (GstCollectPads *pads);
+
+GST_BASE_API
 void            gst_collect_pads_set_flushing  (GstCollectPads *pads, gboolean flushing);
 
 /* get collected buffers */
+
+GST_BASE_API
 GstBuffer*      gst_collect_pads_peek          (GstCollectPads *pads, GstCollectData *data);
+
+GST_BASE_API
 GstBuffer*      gst_collect_pads_pop           (GstCollectPads *pads, GstCollectData *data);
 
 /* get collected bytes */
+
+GST_BASE_API
 guint           gst_collect_pads_available     (GstCollectPads *pads);
+
+GST_BASE_API
 guint           gst_collect_pads_flush         (GstCollectPads *pads, GstCollectData *data,
                                                 guint size);
+GST_BASE_API
 GstBuffer*      gst_collect_pads_read_buffer   (GstCollectPads * pads, GstCollectData * data,
                                                 guint size);
+GST_BASE_API
 GstBuffer*      gst_collect_pads_take_buffer   (GstCollectPads * pads, GstCollectData * data,
                                                 guint size);
 
 /* setting and unsetting waiting mode */
+
+GST_BASE_API
 void            gst_collect_pads_set_waiting   (GstCollectPads *pads, GstCollectData *data,
                                                 gboolean waiting);
 
 /* convenience helper */
+
+GST_BASE_API
 GstFlowReturn	gst_collect_pads_clip_running_time (GstCollectPads * pads,
                                                     GstCollectData * cdata,
                                                     GstBuffer * buf, GstBuffer ** outbuf,
                                                     gpointer user_data);
 
 /* default handlers */
+
+GST_BASE_API
 gboolean        gst_collect_pads_event_default (GstCollectPads * pads, GstCollectData * data,
                                                 GstEvent * event, gboolean discard);
+GST_BASE_API
 gboolean        gst_collect_pads_src_event_default (GstCollectPads * pads, GstPad * pad,
                                                     GstEvent * event);
+GST_BASE_API
 gboolean        gst_collect_pads_query_default (GstCollectPads * pads, GstCollectData * data,
                                                 GstQuery * query, gboolean discard);
 

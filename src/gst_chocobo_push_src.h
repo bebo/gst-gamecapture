@@ -23,6 +23,8 @@
 #include <gst/base/gstpushsrc.h>
 
 #include <gst/gl/gl.h>
+#include <windows.h>
+#include <GL/gl.h>
 
 #include <gst/video/gstvideometa.h>
 #include <gst/video/video.h>

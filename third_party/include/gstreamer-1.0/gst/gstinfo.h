@@ -151,7 +151,7 @@ typedef enum {
  * These are some terminal style flags you can use when creating your
  * debugging categories to make them stand out in debugging output.
  */
-typedef enum {
+typedef enum { /*< flags >*/
   /* colors */
   GST_DEBUG_FG_BLACK		= 0x0000,
   GST_DEBUG_FG_RED		= 0x0001,
@@ -253,7 +253,7 @@ struct _GstDebugCategory {
  * GST_FUNCTION:
  *
  * This macro should evaluate to the name of the current function and be should
- * be defined when configuring your project, as it is compiler dependant. If it
+ * be defined when configuring your project, as it is compiler dependent. If it
  * is not defined, some default value is used. It is used to provide debugging
  * output with the function name of the message.
  *
@@ -323,6 +323,7 @@ typedef void (*GstLogFunction)  (GstDebugCategory * category,
                                  GstDebugMessage  * message,
                                  gpointer           user_data);
 
+GST_API
 void		    gst_debug_log            (GstDebugCategory * category,
                                           GstDebugLevel      level,
                                           const gchar      * file,
@@ -331,7 +332,7 @@ void		    gst_debug_log            (GstDebugCategory * category,
                                           GObject          * object,
                                           const gchar      * format,
                                           ...) G_GNUC_PRINTF (7, 8) G_GNUC_NO_INSTRUMENT;
-
+GST_API
 void            gst_debug_log_valist     (GstDebugCategory * category,
                                           GstDebugLevel      level,
                                           const gchar      * file,
@@ -342,14 +343,21 @@ void            gst_debug_log_valist     (GstDebugCategory * category,
                                           va_list            args) G_GNUC_NO_INSTRUMENT;
 
 /* do not use this function, use the GST_DEBUG_CATEGORY_INIT macro */
+
+GST_API
 GstDebugCategory *_gst_debug_category_new (const gchar * name,
                                            guint         color,
                                            const gchar * description);
+
 /* do not use this function, use the GST_DEBUG_CATEGORY_GET macro */
+
+GST_API
 GstDebugCategory *_gst_debug_get_category (const gchar *name);
 
 
 /* do not use this function, use the GST_CAT_MEMDUMP_* macros */
+
+GST_API
 void _gst_debug_dump_mem (GstDebugCategory * cat, const gchar * file,
     const gchar * func, gint line, GObject * obj, const gchar * msg,
     const guint8 * data, guint length);
@@ -361,14 +369,19 @@ void _gst_debug_dump_mem (GstDebugCategory * cat, const gchar * file,
 typedef	void (* GstDebugFuncPtr)	(void);
 
 /* do no use these functions, use the GST_DEBUG*_FUNCPTR macros */
+
+GST_API
 void	_gst_debug_register_funcptr	(GstDebugFuncPtr	func,
 					 const gchar *		ptrname);
+GST_API
 const gchar *
 	_gst_debug_nameof_funcptr	(GstDebugFuncPtr	func) G_GNUC_NO_INSTRUMENT;
 
 
+GST_API
 const gchar   * gst_debug_message_get    (GstDebugMessage  * message);
 
+GST_API
 void            gst_debug_log_default    (GstDebugCategory * category,
                                           GstDebugLevel      level,
                                           const gchar      * file,
@@ -377,57 +390,108 @@ void            gst_debug_log_default    (GstDebugCategory * category,
                                           GObject          * object,
                                           GstDebugMessage  * message,
                                           gpointer           user_data) G_GNUC_NO_INSTRUMENT;
-
+GST_API
 const gchar *   gst_debug_level_get_name (GstDebugLevel level);
 
+GST_API
 void            gst_debug_add_log_function            (GstLogFunction func,
                                                        gpointer       user_data,
                                                        GDestroyNotify notify);
-
+GST_API
 guint           gst_debug_remove_log_function         (GstLogFunction func);
+
+GST_API
 guint           gst_debug_remove_log_function_by_data (gpointer       data);
 
+GST_API
 void            gst_debug_set_active  (gboolean active);
+
+GST_API
 gboolean        gst_debug_is_active   (void);
 
+GST_API
 void            gst_debug_set_colored (gboolean colored);
+
+GST_API
 void            gst_debug_set_color_mode   (GstDebugColorMode mode);
+
+GST_API
 void            gst_debug_set_color_mode_from_string (const gchar * mode);
+
+GST_API
 gboolean        gst_debug_is_colored  (void);
+
+GST_API
 GstDebugColorMode gst_debug_get_color_mode (void);
 
+GST_API
 void            gst_debug_set_default_threshold      (GstDebugLevel level);
+
+GST_API
 GstDebugLevel   gst_debug_get_default_threshold      (void);
+
+GST_API
 void            gst_debug_set_threshold_for_name     (const gchar * name,
                                                       GstDebugLevel level);
+GST_API
 void            gst_debug_set_threshold_from_string  (const gchar * list, gboolean reset);
+
+GST_API
 void            gst_debug_unset_threshold_for_name   (const gchar * name);
 
 
+GST_API
 void            gst_debug_category_free              (GstDebugCategory *	category);
-void	            gst_debug_category_set_threshold     (GstDebugCategory *	category,
+
+GST_API
+void            gst_debug_category_set_threshold     (GstDebugCategory *	category,
                                                       GstDebugLevel		level);
+
+GST_API
 void            gst_debug_category_reset_threshold   (GstDebugCategory *	category);
+
+GST_API
 GstDebugLevel   gst_debug_category_get_threshold     (GstDebugCategory *	category);
+
+GST_API
 const gchar *   gst_debug_category_get_name          (GstDebugCategory *	category);
+
+GST_API
 guint           gst_debug_category_get_color         (GstDebugCategory *	category);
+
+GST_API
 const gchar *   gst_debug_category_get_description   (GstDebugCategory *	category);
+
+GST_API
 GSList *        gst_debug_get_all_categories	(void);
 
 
+GST_API
 gchar * gst_debug_construct_term_color (guint colorinfo);
+
+GST_API
 gint    gst_debug_construct_win_color  (guint colorinfo);
 
+GST_API
 gint    gst_info_vasprintf              (gchar ** result,
                                          const gchar * format,
                                          va_list args) G_GNUC_PRINTF (2, 0);
+GST_API
 gchar * gst_info_strdup_vprintf         (const gchar *format, va_list args) G_GNUC_PRINTF (1, 0);
+
+GST_API
 gchar * gst_info_strdup_printf          (const gchar *format, ...) G_GNUC_PRINTF (1, 2);
 
+GST_API
 void    gst_print                       (const gchar * format, ...) G_GNUC_PRINTF (1, 2);
+
+GST_API
 void    gst_println                     (const gchar * format, ...) G_GNUC_PRINTF (1, 2);
 
+GST_API
 void    gst_printerr                    (const gchar * format, ...) G_GNUC_PRINTF (1, 2);
+
+GST_API
 void    gst_printerrln                  (const gchar * format, ...) G_GNUC_PRINTF (1, 2);
 
 #ifndef GST_DISABLE_GST_DEBUG
@@ -544,13 +608,16 @@ G_STMT_START{                                        \
  *
  * Default gstreamer core debug log category. Please define your own.
  */
-GST_EXPORT GstDebugCategory *	GST_CAT_DEFAULT;
+
+GST_API GstDebugCategory *	GST_CAT_DEFAULT;
 /* this symbol may not be used */
-GST_EXPORT gboolean			_gst_debug_enabled;
+
+GST_API gboolean                 _gst_debug_enabled;
 
 /* the min debug level, used for quickly discarding debug
  * messages that fall under the threshold. */
-GST_EXPORT GstDebugLevel            _gst_debug_min;
+
+GST_API GstDebugLevel            _gst_debug_min;
 
 /**
  * GST_CAT_LEVEL_LOG:
@@ -1673,8 +1740,18 @@ GST_TRACE (const char *format, ...)
 #endif /* GST_DISABLE_GST_DEBUG */
 
 
+GST_API
 void gst_debug_print_stack_trace (void);
+
+GST_API
 gchar * gst_debug_get_stack_trace (GstStackTraceFlags flags);
+
+GST_API
+void                  gst_debug_add_ring_buffer_logger      (guint max_size_per_thread, guint thread_timeout);
+GST_API
+void                  gst_debug_remove_ring_buffer_logger   (void);
+GST_API
+gchar **              gst_debug_ring_buffer_logger_get_logs (void);
 
 G_END_DECLS
 

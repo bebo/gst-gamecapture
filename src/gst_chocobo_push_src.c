@@ -23,6 +23,7 @@
 #include "gst_chocobo_push_src.h"
 #include "gamecapture/graphics-hook-info.h"
 #include "dxgi/gstdxgidevice.h"
+#include "gst/gl/gstglfuncs.h"
 
 #include <stdbool.h>
 

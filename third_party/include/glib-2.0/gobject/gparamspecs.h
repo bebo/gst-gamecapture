@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -961,6 +961,12 @@ struct _GParamSpecGType
  * @default_value: a #GVariant, or %NULL
  *
  * A #GParamSpec derived structure that contains the meta data for #GVariant properties.
+ *
+ * When comparing values with g_param_values_cmp(), scalar values with the same
+ * type will be compared with g_variant_compare(). Other non-%NULL variants will
+ * be checked for equality with g_variant_equal(), and their sort order is
+ * otherwise undefined. %NULL is ordered before non-%NULL variants. Two %NULL
+ * values compare equal.
  *
  * Since: 2.26
  */

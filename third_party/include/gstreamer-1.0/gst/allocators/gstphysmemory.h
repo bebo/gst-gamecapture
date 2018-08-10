@@ -21,6 +21,7 @@
 #define __GST_PHYS_MEMORY_H__
 
 #include <gst/gst.h>
+#include <gst/allocators/allocators-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -37,21 +38,29 @@ typedef struct _GstPhysMemoryAllocatorInterface GstPhysMemoryAllocatorInterface;
 
 /**
  * GstPhysMemoryAllocatorInterface:
+ * @get_phys_addr: Implementations shall return the physicall memory address
+ *    that is backing the provided memory, or 0 if none.
  *
  * Marker interface for allocators with physical address backed memory
  *
- * Since: 1.12
+ * Since: 1.14
  */
 struct _GstPhysMemoryAllocatorInterface
 {
+  /*< private >*/
   GTypeInterface parent_iface;
 
+  /*< public >*/
   guintptr (*get_phys_addr) (GstPhysMemoryAllocator * allocator, GstMemory * mem);
 };
 
+GST_ALLOCATORS_API
 GType gst_phys_memory_allocator_get_type (void);
 
+GST_ALLOCATORS_API
 gboolean gst_is_phys_memory (GstMemory *mem);
+
+GST_ALLOCATORS_API
 guintptr gst_phys_memory_get_phys_addr (GstMemory * mem);
 
 G_END_DECLS

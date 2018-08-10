@@ -75,7 +75,22 @@ typedef struct _GstMpegtsAtscVCT GstMpegtsAtscVCT;
 
 /**
  * GstMpegtsAtscVCTSource:
- * @descriptors: (element-type GstMpegtsDescriptor): descriptors
+ * @short_name: The short name of a source
+ * @major_channel_number: The major channel number
+ * @minor_channel_number: The minor channel number
+ * @modulation_mode: The modulation mode
+ * @carrier_frequency: The carrier frequency
+ * @channel_TSID: The transport stream ID
+ * @program_number: The program number (see #GstMpegtsPatProgram)
+ * @ETM_location: The ETM location
+ * @access_controlled: is access controlled
+ * @hidden: is hidden
+ * @path_select: is path select, CVCT only
+ * @out_of_band: is out of band, CVCT only
+ * @hide_guide: is hide guide
+ * @service_type: The service type
+ * @source_id: The source id
+ * @descriptors: (element-type GstMpegtsDescriptor): an array of #GstMpegtsDescriptor
  *
  * Source from a @GstMpegtsAtscVCT, can be used both for TVCT and CVCT tables
  */
@@ -103,6 +118,8 @@ struct _GstMpegtsAtscVCTSource
 
 /**
  * GstMpegtsAtscVCT:
+ * @transport_stream_id: The transport stream
+ * @protocol_version: The protocol version
  * @sources: (element-type GstMpegtsAtscVCTSource): sources
  * @descriptors: (element-type GstMpegtsDescriptor): descriptors
  *
@@ -119,10 +136,16 @@ struct _GstMpegtsAtscVCT
   GPtrArray *descriptors;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_atsc_vct_get_type (void);
+
+GST_MPEGTS_API
 GType gst_mpegts_atsc_vct_source_get_type (void);
 
+GST_MPEGTS_API
 const GstMpegtsAtscVCT * gst_mpegts_section_get_atsc_tvct (GstMpegtsSection * section);
+
+GST_MPEGTS_API
 const GstMpegtsAtscVCT * gst_mpegts_section_get_atsc_cvct (GstMpegtsSection * section);
 
 /* MGT */
@@ -141,6 +164,10 @@ typedef enum {
 
 /**
  * GstMpegtsAtscMGTTable:
+ * @table_type: #GstMpegtsAtscMGTTableType
+ * @pid: The packet ID
+ * @version_number: The version number
+ * @number_bytes:
  * @descriptors: (element-type GstMpegtsDescriptor): descriptors
  *
  * Source from a @GstMpegtsAtscMGT
@@ -156,6 +183,8 @@ struct _GstMpegtsAtscMGTTable
 
 /**
  * GstMpegtsAtscMGT:
+ * @protocol_version: The protocol version
+ * @tables_defined: The numbers of subtables
  * @tables: (element-type GstMpegtsAtscMGTTable): the tables
  * @descriptors: (element-type GstMpegtsDescriptor): descriptors
  *
@@ -170,9 +199,13 @@ struct _GstMpegtsAtscMGT
   GPtrArray *descriptors;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_atsc_mgt_get_type (void);
+
+GST_MPEGTS_API
 GType gst_mpegts_atsc_mgt_table_get_type (void);
 
+GST_MPEGTS_API
 const GstMpegtsAtscMGT * gst_mpegts_section_get_atsc_mgt (GstMpegtsSection * section);
 
 /* Multiple string structure (used in ETT and EIT */
@@ -183,6 +216,16 @@ const GstMpegtsAtscMGT * gst_mpegts_section_get_atsc_mgt (GstMpegtsSection * sec
 typedef struct _GstMpegtsAtscStringSegment GstMpegtsAtscStringSegment;
 typedef struct _GstMpegtsAtscMultString GstMpegtsAtscMultString;
 
+/**
+ * GstMpegtsAtscStringSegment:
+ * @compression_type: The compression type
+ * @mode: The mode
+ * @compressed_data_size: The size of compressed data
+ * @compressed_data: The compressed data
+ * @cached_string:
+ *
+ * A string segment
+ */
 struct _GstMpegtsAtscStringSegment {
   guint8 compression_type;
   guint8 mode;
@@ -192,10 +235,12 @@ struct _GstMpegtsAtscStringSegment {
   gchar *cached_string;
 };
 
+GST_MPEGTS_API
 const gchar * gst_mpegts_atsc_string_segment_get_string (GstMpegtsAtscStringSegment * seg);
 
 /**
  * GstMpegtsAtscMultString:
+ * @iso_639_langcode: The ISO639 language code
  * @segments: (element-type GstMpegtsAtscStringSegment)
  *
  */
@@ -204,7 +249,10 @@ struct _GstMpegtsAtscMultString {
   GPtrArray *segments;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_atsc_string_segment_get_type (void);
+
+GST_MPEGTS_API
 GType gst_mpegts_atsc_mult_string_get_type (void);
 
 /* EIT */
@@ -217,6 +265,10 @@ typedef struct _GstMpegtsAtscEIT GstMpegtsAtscEIT;
 
 /**
  * GstMpegtsAtscEITEvent:
+ * @event_id: The event id
+ * @start_time: The start time
+ * @etm_location: The etm location
+ * @length_in_seconds: The length in seconds
  * @titles: (element-type GstMpegtsAtscMultString): the titles
  * @descriptors: (element-type GstMpegtsDescriptor): descriptors
  *
@@ -234,6 +286,8 @@ struct _GstMpegtsAtscEITEvent {
 
 /**
  * GstMpegtsAtscEIT:
+ * @source_id: The source id
+ * @protocol_version: The protocol version
  * @events: (element-type GstMpegtsAtscEITEvent): Events
  *
  * Event Information Table (ATSC)
@@ -247,9 +301,13 @@ struct _GstMpegtsAtscEIT
   GPtrArray     *events;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_atsc_eit_event_get_type (void);
+
+GST_MPEGTS_API
 GType gst_mpegts_atsc_eit_get_type (void);
 
+GST_MPEGTS_API
 const GstMpegtsAtscEIT *gst_mpegts_section_get_atsc_eit (GstMpegtsSection *section);
 
 /* ETT */
@@ -260,6 +318,9 @@ typedef struct _GstMpegtsAtscETT GstMpegtsAtscETT;
 
 /**
  * GstMpegtsAtscETT:
+ * @ett_table_id_extension:
+ * @protocol_version: The protocol version
+ * @etm_id: The etm id
  * @messages: (element-type GstMpegtsAtscMultString): List of texts
  *
  * Extended Text Table (ATSC)
@@ -274,8 +335,10 @@ struct _GstMpegtsAtscETT
   GPtrArray     *messages;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_atsc_ett_get_type (void);
 
+GST_MPEGTS_API
 const GstMpegtsAtscETT *gst_mpegts_section_get_atsc_ett (GstMpegtsSection *section);
 
 /* STT */
@@ -285,7 +348,14 @@ typedef struct _GstMpegtsAtscSTT GstMpegtsAtscSTT;
 
 /**
  * GstMpegtsAtscSTT:
+ * @protocol_version: The protocol version
+ * @system_time: The system time
+ * @gps_utc_offset: The GPS to UTC offset
+ * @ds_status:
+ * @ds_dayofmonth: The day of month
+ * @ds_hour: The hour
  * @descriptors: (element-type GstMpegtsDescriptor): descriptors
+ * @utc_datetime: The UTC date and time
  *
  * System Time Table (A65)
  *
@@ -303,10 +373,14 @@ struct _GstMpegtsAtscSTT
   GstDateTime *utc_datetime;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_atsc_stt_get_type (void);
 
+GST_MPEGTS_API
 const GstMpegtsAtscSTT * gst_mpegts_section_get_atsc_stt (GstMpegtsSection * section);
 /* FIXME receive a non-const parameter but we only provide a const getter */
+
+GST_MPEGTS_API
 GstDateTime * gst_mpegts_atsc_stt_get_datetime_utc (GstMpegtsAtscSTT * stt);
 
 G_END_DECLS

@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -82,6 +82,11 @@ void        g_hash_table_remove_all        (GHashTable     *hash_table);
 GLIB_AVAILABLE_IN_ALL
 gboolean    g_hash_table_steal             (GHashTable     *hash_table,
                                             gconstpointer   key);
+GLIB_AVAILABLE_IN_2_58
+gboolean    g_hash_table_steal_extended    (GHashTable     *hash_table,
+                                            gconstpointer   lookup_key,
+                                            gpointer       *stolen_key,
+                                            gpointer       *stolen_value);
 GLIB_AVAILABLE_IN_ALL
 void        g_hash_table_steal_all         (GHashTable     *hash_table);
 GLIB_AVAILABLE_IN_ALL

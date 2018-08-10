@@ -29,6 +29,7 @@
 #include <gst/video/video.h>
 #include <gst/audio/audio.h>
 #include <gst/base/gstadapter.h>
+#include <gst/pbutils/pbutils-prelude.h>
 
 G_BEGIN_DECLS
 #define GST_TYPE_AUDIO_VISUALIZER            (gst_audio_visualizer_get_type())
@@ -83,14 +84,16 @@ struct _GstAudioVisualizer
   /* audio state */
   GstAudioInfo ainfo;
 
-  /* <private> */
+  /*< private >*/
   GstAudioVisualizerPrivate *priv;
 };
 
 struct _GstAudioVisualizerClass
 {
+  /*< private >*/
   GstElementClass parent_class;
 
+  /*< public >*/
   /* virtual function, called whenever the format changes */
   gboolean (*setup) (GstAudioVisualizer * scope);
 
@@ -100,6 +103,7 @@ struct _GstAudioVisualizerClass
   gboolean (*decide_allocation)   (GstAudioVisualizer * scope, GstQuery *query);
 };
 
+GST_PBUTILS_API
 GType gst_audio_visualizer_get_type (void);
 
 G_END_DECLS

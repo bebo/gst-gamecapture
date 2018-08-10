@@ -66,6 +66,38 @@ typedef struct _GstAudioConverter GstAudioConverter;
  */
 #define GST_AUDIO_CONVERTER_OPT_QUANTIZATION   "GstAudioConverter.quantization"
 
+/**
+ * GST_AUDIO_CONVERTER_OPT_MIX_MATRIX:
+ *
+ * #GST_TYPE_VALUE_LIST, The channel mapping matrix.
+ *
+ * The matrix coefficients must be between -1 and 1: the number of rows is equal
+ * to the number of output channels and the number of columns is equal to the
+ * number of input channels.
+ *
+ * ## Example matrix generation code
+ * To generate the matrix using code:
+ *
+ * |[
+ * GValue v = G_VALUE_INIT;
+ * GValue v2 = G_VALUE_INIT;
+ * GValue v3 = G_VALUE_INIT;
+ *
+ * g_value_init (&v2, GST_TYPE_ARRAY);
+ * g_value_init (&v3, G_TYPE_DOUBLE);
+ * g_value_set_double (&v3, 1);
+ * gst_value_array_append_value (&v2, &v3);
+ * g_value_unset (&v3);
+ * [ Repeat for as many double as your input channels - unset and reinit v3 ]
+ * g_value_init (&v, GST_TYPE_ARRAY);
+ * gst_value_array_append_value (&v, &v2);
+ * g_value_unset (&v2);
+ * [ Repeat for as many v2's as your output channels - unset and reinit v2]
+ * g_object_set_property (G_OBJECT (audiomixmatrix), "matrix", &v);
+ * g_value_unset (&v);
+ * ]|
+ */
+#define GST_AUDIO_CONVERTER_OPT_MIX_MATRIX   "GstAudioConverter.mix-matrix"
 
 /**
  * GstAudioConverterFlags:
@@ -83,34 +115,55 @@ typedef enum {
   GST_AUDIO_CONVERTER_FLAG_VARIABLE_RATE   = (1 << 1)
 } GstAudioConverterFlags;
 
+GST_AUDIO_API
 GstAudioConverter *  gst_audio_converter_new             (GstAudioConverterFlags flags,
                                                           GstAudioInfo *in_info,
                                                           GstAudioInfo *out_info,
                                                           GstStructure *config);
 
+GST_AUDIO_API
+GType                gst_audio_converter_get_type        (void);
+
+GST_AUDIO_API
 void                 gst_audio_converter_free            (GstAudioConverter * convert);
 
+GST_AUDIO_API
 void                 gst_audio_converter_reset           (GstAudioConverter * convert);
 
+GST_AUDIO_API
 gboolean             gst_audio_converter_update_config   (GstAudioConverter * convert,
                                                           gint in_rate, gint out_rate,
                                                           GstStructure *config);
+
+GST_AUDIO_API
 const GstStructure * gst_audio_converter_get_config      (GstAudioConverter * convert,
                                                           gint *in_rate, gint *out_rate);
 
+GST_AUDIO_API
 gsize                gst_audio_converter_get_out_frames  (GstAudioConverter *convert,
                                                           gsize in_frames);
+
+GST_AUDIO_API
 gsize                gst_audio_converter_get_in_frames   (GstAudioConverter *convert,
                                                           gsize out_frames);
 
+GST_AUDIO_API
 gsize                gst_audio_converter_get_max_latency (GstAudioConverter *convert);
 
+GST_AUDIO_API
 gboolean             gst_audio_converter_samples         (GstAudioConverter * convert,
                                                           GstAudioConverterFlags flags,
                                                           gpointer in[], gsize in_frames,
                                                           gpointer out[], gsize out_frames);
 
+GST_AUDIO_API
 gboolean             gst_audio_converter_supports_inplace (GstAudioConverter *convert);
+
+GST_AUDIO_API
+gboolean             gst_audio_converter_convert          (GstAudioConverter * convert,
+                                                           GstAudioConverterFlags flags,
+                                                           gpointer in, gsize in_size,
+                                                           gpointer *out, gsize *out_size);
 
 G_END_DECLS
 

@@ -21,17 +21,12 @@
 #ifndef __GST_GL_H__
 #define __GST_GL_H__
 
-#ifndef GST_USE_UNSTABLE_API
-// #warning "The GL library from gst-plugins-bad is unstable API and may change in future."
-// #warning "You can define GST_USE_UNSTABLE_API to avoid this warning."
-#endif
-
 #include <gst/gl/gstgl_fwd.h>
-#include <gst/gl/gstglconfig.h>
 #include <gst/gl/gstglapi.h>
-#include <gst/gl/gstgldisplay.h>
+#include <gst/gl/gstglconfig.h>
 #include <gst/gl/gstglcontext.h>
 #include <gst/gl/gstgldebug.h>
+#include <gst/gl/gstgldisplay.h>
 #include <gst/gl/gstglfeature.h>
 #include <gst/gl/gstglformat.h>
 #include <gst/gl/gstglutils.h>

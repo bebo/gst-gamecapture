@@ -21,6 +21,7 @@
 #define __TAG_XMP_WRITER_H__
 
 #include <gst/gst.h>
+#include <gst/tag/tag-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -40,21 +41,28 @@ struct _GstTagXmpWriterInterface {
   GTypeInterface parent;
 };
 
+GST_TAG_API
 GType           gst_tag_xmp_writer_get_type		(void);
 
+GST_TAG_API
 void		gst_tag_xmp_writer_add_all_schemas	(GstTagXmpWriter * config);
 
+GST_TAG_API
 void		gst_tag_xmp_writer_add_schema	(GstTagXmpWriter * config,
 						const gchar * schema);
 
+GST_TAG_API
 gboolean	gst_tag_xmp_writer_has_schema	(GstTagXmpWriter * config,
 						const gchar * schema);
 
+GST_TAG_API
 void		gst_tag_xmp_writer_remove_schema	(GstTagXmpWriter * config,
 						const gchar * schema);
 
+GST_TAG_API
 void		gst_tag_xmp_writer_remove_all_schemas (GstTagXmpWriter * config);
 
+GST_TAG_API
 GstBuffer*	gst_tag_xmp_writer_tag_list_to_xmp_buffer 	(GstTagXmpWriter * config,
 							 const GstTagList * taglist,
 							 gboolean read_only);

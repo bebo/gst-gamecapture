@@ -21,6 +21,7 @@
 #define __GST_VIDEO_TILE_H__
 
 #include <gst/gst.h>
+#include <gst/video/video-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -38,6 +39,10 @@ typedef enum
 } GstVideoTileType;
 
 #define GST_VIDEO_TILE_TYPE_SHIFT     (16)
+
+/**
+ * GST_VIDEO_TILE_TYPE_MASK: (value 65535)
+ */
 #define GST_VIDEO_TILE_TYPE_MASK      ((1 << GST_VIDEO_TILE_TYPE_SHIFT) - 1)
 
 /**
@@ -68,6 +73,10 @@ typedef enum
 
 
 #define GST_VIDEO_TILE_Y_TILES_SHIFT     (16)
+
+/**
+ * GST_VIDEO_TILE_X_TILES_MASK: (value 65535)
+ */
 #define GST_VIDEO_TILE_X_TILES_MASK      ((1 << GST_VIDEO_TILE_Y_TILES_SHIFT) - 1)
 
 /**
@@ -112,6 +121,7 @@ typedef enum
   GST_VIDEO_TILE_MODE_ZFLIPZ_2X2 = GST_VIDEO_TILE_MAKE_MODE (1, INDEXED),
 } GstVideoTileMode;
 
+GST_VIDEO_API
 guint           gst_video_tile_get_index                (GstVideoTileMode mode, gint x, gint y,
                                                          gint x_tiles, gint y_tiles);
 

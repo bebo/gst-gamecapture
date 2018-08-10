@@ -51,6 +51,8 @@ G_BEGIN_DECLS
  * Note that this is a flag, and therefore users should not assume it
  * will be a single value. Do not use the equality operator for checking
  * whether a stream is of a certain type.
+ *
+ * Since: 1.10
  */
 typedef enum {
   GST_STREAM_TYPE_UNKNOWN   = 1 << 0,
@@ -81,8 +83,11 @@ typedef struct _GstStreamPrivate GstStreamPrivate;
  *
  * Elements can subclass a #GstStream for internal usage (to contain information
  * pertinent to streams of data).
+ *
+ * Since: 1.10
  */
 struct _GstStream {
+  /*< private >*/
   GstObject object;
 
   /*< public >*/
@@ -107,30 +112,45 @@ struct _GstStreamClass {
   gpointer _gst_reserved[GST_PADDING];
 };
 
+GST_API
 GType     gst_stream_get_type (void);
 
 #include <gst/gstevent.h>
 
+GST_API
 GstStream *gst_stream_new            (const gchar *stream_id,
 				      GstCaps *caps,
 				      GstStreamType type,
 				      GstStreamFlags flags);
+GST_API
+const gchar *  gst_stream_get_stream_id (GstStream *stream);
 
-const gchar *gst_stream_get_stream_id (GstStream *stream);
-
+GST_API
 void           gst_stream_set_stream_flags (GstStream *stream, GstStreamFlags flags);
+
+GST_API
 GstStreamFlags gst_stream_get_stream_flags (GstStream *stream);
 
-void          gst_stream_set_stream_type (GstStream *stream, GstStreamType stream_type);
-GstStreamType gst_stream_get_stream_type (GstStream *stream);
+GST_API
+void           gst_stream_set_stream_type (GstStream *stream, GstStreamType stream_type);
 
-void        gst_stream_set_tags (GstStream *stream, GstTagList *tags);
-GstTagList *gst_stream_get_tags (GstStream *stream);
+GST_API
+GstStreamType  gst_stream_get_stream_type (GstStream *stream);
 
-void     gst_stream_set_caps (GstStream *stream, GstCaps *caps);
-GstCaps *gst_stream_get_caps (GstStream *stream);
+GST_API
+void           gst_stream_set_tags (GstStream *stream, GstTagList *tags);
 
-const gchar *gst_stream_type_get_name (GstStreamType stype);
+GST_API
+GstTagList *   gst_stream_get_tags (GstStream *stream);
+
+GST_API
+void           gst_stream_set_caps (GstStream *stream, GstCaps *caps);
+
+GST_API
+GstCaps *      gst_stream_get_caps (GstStream *stream);
+
+GST_API
+const gchar *  gst_stream_type_get_name (GstStreamType stype);
 
 #ifdef G_DEFINE_AUTOPTR_CLEANUP_FUNC
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GstStream, gst_object_unref)

@@ -84,13 +84,21 @@ struct _GstVideoFrame {
   gpointer _gst_reserved[GST_PADDING];
 };
 
+GST_VIDEO_API
 gboolean    gst_video_frame_map           (GstVideoFrame *frame, GstVideoInfo *info,
                                            GstBuffer *buffer, GstMapFlags flags);
+
+GST_VIDEO_API
 gboolean    gst_video_frame_map_id        (GstVideoFrame *frame, GstVideoInfo *info,
                                            GstBuffer *buffer, gint id, GstMapFlags flags);
+
+GST_VIDEO_API
 void        gst_video_frame_unmap         (GstVideoFrame *frame);
 
+GST_VIDEO_API
 gboolean    gst_video_frame_copy          (GstVideoFrame *dest, const GstVideoFrame *src);
+
+GST_VIDEO_API
 gboolean    gst_video_frame_copy_plane    (GstVideoFrame *dest, const GstVideoFrame *src,
                                            guint plane);
 
@@ -137,10 +145,10 @@ gboolean    gst_video_frame_copy_plane    (GstVideoFrame *dest, const GstVideoFr
  *                                     in the video frame is the top field.  If unset, the
  *                                     bottom field is first.
  * @GST_VIDEO_BUFFER_FLAG_RFF:         If the #GstBuffer is interlaced, then the first field
- *                                     (as defined by the %GST_VIDEO_BUFFER_TFF flag setting)
+ *                                     (as defined by the %GST_VIDEO_BUFFER_FLAG_TFF flag setting)
  *                                     is repeated.
  * @GST_VIDEO_BUFFER_FLAG_ONEFIELD:    If the #GstBuffer is interlaced, then only the
- *                                     first field (as defined by the %GST_VIDEO_BUFFER_TFF
+ *                                     first field (as defined by the %GST_VIDEO_BUFFER_FLAG_TFF
  *                                     flag setting) is to be displayed.
  * @GST_VIDEO_BUFFER_FLAG_MULTIPLE_VIEW: The #GstBuffer contains one or more specific views,
  *                                     such as left or right eye view. This flags is set on

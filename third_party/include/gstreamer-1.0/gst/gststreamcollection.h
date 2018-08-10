@@ -67,9 +67,9 @@ typedef struct _GstStreamCollectionPrivate GstStreamCollectionPrivate;
  * Since: 1.10
  */
 struct _GstStreamCollection {
+  /*< private >*/
   GstObject object;
 
-  /*< private >*/
   gchar *upstream_id;
   GstStreamCollectionPrivate *priv;
 
@@ -93,15 +93,22 @@ struct _GstStreamCollectionClass {
   gpointer _gst_reserved[GST_PADDING];
 };
 
+GST_API
 GType gst_stream_collection_get_type (void);
 
+GST_API
 GstStreamCollection *gst_stream_collection_new (const gchar *upstream_id);
 
+GST_API
 const gchar *gst_stream_collection_get_upstream_id (GstStreamCollection *collection);
 
+GST_API
 guint gst_stream_collection_get_size (GstStreamCollection *collection);
+
+GST_API
 GstStream *gst_stream_collection_get_stream (GstStreamCollection *collection, guint index);
 
+GST_API
 gboolean gst_stream_collection_add_stream (GstStreamCollection *collection,
                                            GstStream *stream);
 

@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -64,6 +64,12 @@ struct _GMountOperationClass
 			 const char            *default_domain,
 			 GAskPasswordFlags      flags);
 
+  /**
+   * GMountOperationClass::ask_question:
+   * @op:
+   * @message:
+   * @choices: (array zero-terminated=1) (element-type utf8):
+   */
   void (* ask_question) (GMountOperation       *op,
 			 const char            *message,
 			 const char            *choices[]);
@@ -73,6 +79,15 @@ struct _GMountOperationClass
 
   void (* aborted)      (GMountOperation       *op);
 
+  /**
+   * GMountOperationClass::show_processes:
+   * @op:
+   * @message:
+   * @processes: (element-type GPid):
+   * @choices: (array zero-terminated=1) (element-type utf8):
+   *
+   * Since: 2.22
+   */
   void (* show_processes) (GMountOperation      *op,
                            const gchar          *message,
                            GArray               *processes,
@@ -134,6 +149,21 @@ void          g_mount_operation_set_choice        (GMountOperation *op,
 GLIB_AVAILABLE_IN_ALL
 void          g_mount_operation_reply             (GMountOperation *op,
 						   GMountOperationResult result);
+GLIB_AVAILABLE_IN_2_58
+gboolean      g_mount_operation_get_is_tcrypt_hidden_volume (GMountOperation *op);
+GLIB_AVAILABLE_IN_2_58
+void          g_mount_operation_set_is_tcrypt_hidden_volume (GMountOperation *op,
+                                                             gboolean hidden_volume);
+GLIB_AVAILABLE_IN_2_58
+gboolean      g_mount_operation_get_is_tcrypt_system_volume (GMountOperation *op);
+GLIB_AVAILABLE_IN_2_58
+void          g_mount_operation_set_is_tcrypt_system_volume (GMountOperation *op,
+                                                             gboolean system_volume);
+GLIB_AVAILABLE_IN_2_58
+guint  g_mount_operation_get_pim           (GMountOperation *op);
+GLIB_AVAILABLE_IN_2_58
+void          g_mount_operation_set_pim           (GMountOperation *op,
+                                                   guint pim);
 
 G_END_DECLS
 

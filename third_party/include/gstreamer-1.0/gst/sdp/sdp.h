@@ -22,6 +22,8 @@
 #ifndef __GST_SDP__H__
 #define __GST_SDP__H__
 
+#include <gst/sdp/sdp-prelude.h>
+
 #include <gst/sdp/gstsdp.h>
 #include <gst/sdp/gstsdpmessage.h>
 #include <gst/sdp/gstmikey.h>

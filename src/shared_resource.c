@@ -1,5 +1,6 @@
 #include "shared_resource.h"
 #include "dxgi/gstdxgidevice.h"
+#include "gst/gl/gstglfuncs.h"
 
 /* *INDENT-OFF* */
 static const GLfloat flip_vertices[] = {

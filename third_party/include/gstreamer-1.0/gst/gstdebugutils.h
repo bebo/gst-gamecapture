@@ -1,7 +1,7 @@
 /* GStreamer
  * Copyright (C) 2007 Stefan Kost <ensonic@users.sf.net>
  *
- * gstdebugutils.h: debugging and analysis utillities
+ * gstdebugutils.h: debugging and analysis utilities
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -58,8 +58,13 @@ typedef enum {
 
 /********** pipeline graphs **********/
 
+GST_API
 gchar * gst_debug_bin_to_dot_data (GstBin *bin, GstDebugGraphDetails details);
+
+GST_API
 void gst_debug_bin_to_dot_file (GstBin *bin, GstDebugGraphDetails details, const gchar *file_name);
+
+GST_API
 void gst_debug_bin_to_dot_file_with_ts (GstBin *bin, GstDebugGraphDetails details, const gchar *file_name);
 
 #ifndef GST_DISABLE_GST_DEBUG
@@ -80,9 +85,9 @@ void gst_debug_bin_to_dot_file_with_ts (GstBin *bin, GstDebugGraphDetails detail
  * There is also a utility called xdot which allows you to view the dot file
  * directly without converting it first.
  *
- * The macro is only active if gstreamer is configured with
- * &quot;--gst-enable-gst-debug&quot; and the environment variable
- * GST_DEBUG_DUMP_DOT_DIR is set to a basepath (e.g. /tmp).
+ * The macro is only active if the environment variable GST_DEBUG_DUMP_DOT_DIR
+ * is set to a basepath (e.g. /tmp), and the GStreamer debugging subsystem is
+ * enabled (i.e., no use of `./configure --disable-gst-debug')
  */
 #define GST_DEBUG_BIN_TO_DOT_FILE(bin, details, file_name) gst_debug_bin_to_dot_file (bin, details, file_name)
 

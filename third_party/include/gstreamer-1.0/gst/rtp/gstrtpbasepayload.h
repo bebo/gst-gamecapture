@@ -21,6 +21,7 @@
 #define __GST_RTP_BASE_PAYLOAD_H__
 
 #include <gst/gst.h>
+#include <gst/rtp/rtp-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -145,23 +146,29 @@ struct _GstRTPBasePayloadClass
   gpointer _gst_reserved[GST_PADDING];
 };
 
+GST_RTP_API
 GType           gst_rtp_base_payload_get_type           (void);
 
+GST_RTP_API
 void            gst_rtp_base_payload_set_options        (GstRTPBasePayload *payload,
                                                          const gchar *media,
                                                          gboolean dynamic,
                                                          const gchar *encoding_name,
                                                          guint32 clock_rate);
 
+GST_RTP_API
 gboolean        gst_rtp_base_payload_set_outcaps        (GstRTPBasePayload *payload,
                                                          const gchar *fieldname, ...);
 
+GST_RTP_API
 gboolean        gst_rtp_base_payload_is_filled          (GstRTPBasePayload *payload,
                                                          guint size, GstClockTime duration);
 
+GST_RTP_API
 GstFlowReturn   gst_rtp_base_payload_push               (GstRTPBasePayload *payload,
                                                          GstBuffer *buffer);
 
+GST_RTP_API
 GstFlowReturn   gst_rtp_base_payload_push_list          (GstRTPBasePayload *payload,
                                                          GstBufferList *list);
 

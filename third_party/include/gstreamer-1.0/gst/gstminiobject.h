@@ -213,11 +213,12 @@ struct _GstMiniObject {
   GstMiniObjectFreeFunction free;
 
   /* < private > */
-  /* Used to keep track of weak ref notifies and qdata */
-  guint n_qdata;
-  gpointer qdata;
+  /* Used to keep track of parents, weak ref notifies and qdata */
+  guint priv_uint;
+  gpointer priv_pointer;
 };
 
+GST_API
 void            gst_mini_object_init (GstMiniObject *mini_object,
                                       guint flags, GType type,
                                       GstMiniObjectCopyFunction copy_func,
@@ -226,35 +227,63 @@ void            gst_mini_object_init (GstMiniObject *mini_object,
 
 
 /* refcounting */
+
+GST_API
 GstMiniObject * gst_mini_object_ref		(GstMiniObject *mini_object);
+
+GST_API
 void            gst_mini_object_unref		(GstMiniObject *mini_object);
 
+GST_API
 void            gst_mini_object_weak_ref        (GstMiniObject *object,
 					         GstMiniObjectNotify notify,
 					         gpointer data);
+GST_API
 void            gst_mini_object_weak_unref	(GstMiniObject *object,
 					         GstMiniObjectNotify notify,
 					         gpointer data);
 
 /* locking */
+
+GST_API
 gboolean        gst_mini_object_lock            (GstMiniObject *object, GstLockFlags flags);
+
+GST_API
 void            gst_mini_object_unlock          (GstMiniObject *object, GstLockFlags flags);
 
+GST_API
 gboolean        gst_mini_object_is_writable     (const GstMiniObject *mini_object);
+
+GST_API
 GstMiniObject * gst_mini_object_make_writable	(GstMiniObject *mini_object) G_GNUC_WARN_UNUSED_RESULT;
 
 /* copy */
+
+GST_API
 GstMiniObject * gst_mini_object_copy		(const GstMiniObject *mini_object) G_GNUC_MALLOC G_GNUC_WARN_UNUSED_RESULT;
 
 
+GST_API
 void            gst_mini_object_set_qdata       (GstMiniObject *object, GQuark quark,
                                                  gpointer data, GDestroyNotify destroy);
+GST_API
 gpointer        gst_mini_object_get_qdata       (GstMiniObject *object, GQuark quark);
+
+GST_API
 gpointer        gst_mini_object_steal_qdata     (GstMiniObject *object, GQuark quark);
 
+GST_API
+void            gst_mini_object_add_parent      (GstMiniObject *object, GstMiniObject *parent);
+GST_API
+void            gst_mini_object_remove_parent   (GstMiniObject *object, GstMiniObject *parent);
 
+GST_API
 gboolean        gst_mini_object_replace         (GstMiniObject **olddata, GstMiniObject *newdata);
+
+GST_API
 gboolean        gst_mini_object_take            (GstMiniObject **olddata, GstMiniObject *newdata);
+
+GST_API
 GstMiniObject * gst_mini_object_steal           (GstMiniObject **olddata) G_GNUC_WARN_UNUSED_RESULT;
 
 /**

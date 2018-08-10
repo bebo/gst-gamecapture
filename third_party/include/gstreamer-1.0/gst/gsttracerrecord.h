@@ -37,6 +37,7 @@ typedef struct _GstTracerRecordClass GstTracerRecordClass;
 #define GST_TRACER_RECORD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj),GST_TYPE_TRACER_RECORD,GstTracerRecordClass))
 #define GST_TRACER_RECORD_CAST(obj)       ((GstTracerRecord *)(obj))
 
+GST_API
 GType gst_tracer_record_get_type          (void);
 
 #ifdef G_DEFINE_AUTOPTR_CLEANUP_FUNC
@@ -50,7 +51,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GstTracerRecord, gst_object_unref)
  * @GST_TRACER_VALUE_SCOPE_ELEMENT: the value is related to an #GstElement
  * @GST_TRACER_VALUE_SCOPE_PAD: the value is related to a #GstPad
  *
- * Tracing record will contain fields that contain a meassured value or extra
+ * Tracing record will contain fields that contain a measured value or extra
  * meta-data. One such meta data are values that tell where a measurement was
  * taken. This enumerating declares to which scope such a meta data field
  * relates to. If it is e.g. %GST_TRACER_VALUE_SCOPE_PAD, then each of the log
@@ -87,9 +88,11 @@ typedef enum
 
 #ifdef GST_USE_UNSTABLE_API
 
+GST_API
 GstTracerRecord * gst_tracer_record_new (const gchar * name, const gchar * firstfield, ...);
 
 #ifndef GST_DISABLE_GST_DEBUG
+GST_API
 void              gst_tracer_record_log (GstTracerRecord *self, ...);
 #else
 #define gst_tracer_record_log(...) G_STMT_START {} G_STMT_END

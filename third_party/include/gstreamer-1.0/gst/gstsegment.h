@@ -183,7 +183,7 @@ typedef enum { /*< flags >*/
  * @time: the stream time of the segment start
  * @position: the buffer timestamp position in the segment (used internally by
  *     elements such as sources, demuxers or parsers to track progress)
- * @duration: the duration of the segment
+ * @duration: the duration of the stream
  *
  * A helper structure that holds the configured region of
  * interest in a media file.
@@ -209,41 +209,67 @@ struct _GstSegment {
   gpointer        _gst_reserved[GST_PADDING];
 };
 
+GST_API
 GType        gst_segment_get_type            (void);
 
+GST_API
 GstSegment * gst_segment_new                 (void) G_GNUC_MALLOC;
+
+GST_API
 GstSegment * gst_segment_copy                (const GstSegment *segment) G_GNUC_MALLOC;
+
+GST_API
 void         gst_segment_copy_into           (const GstSegment *src, GstSegment *dest);
+
+GST_API
 void         gst_segment_free                (GstSegment *segment);
 
+GST_API
 void         gst_segment_init                (GstSegment *segment, GstFormat format);
 
+GST_API
 gint         gst_segment_to_stream_time_full (const GstSegment *segment, GstFormat format, guint64 position, guint64 * stream_time);
+
+GST_API
 guint64      gst_segment_to_stream_time      (const GstSegment *segment, GstFormat format, guint64 position);
+
+GST_API
 gint         gst_segment_position_from_stream_time_full (const GstSegment * segment, GstFormat format, guint64 stream_time, guint64 * position);
+
+GST_API
 guint64      gst_segment_position_from_stream_time (const GstSegment * segment, GstFormat format, guint64 stream_time);
+
+GST_API
 guint64      gst_segment_to_running_time     (const GstSegment *segment, GstFormat format, guint64 position);
 
+GST_API
 gint         gst_segment_to_running_time_full (const GstSegment *segment, GstFormat format, guint64 position,
                                                guint64 * running_time);
-#ifndef GST_DISABLE_DEPRECATED
+
+GST_DEPRECATED_FOR(gst_segment_position_from_running_time)
 guint64      gst_segment_to_position         (const GstSegment *segment, GstFormat format, guint64 running_time);
-#endif
+
+GST_API
 gint         gst_segment_position_from_running_time_full (const GstSegment *segment, GstFormat format, guint64 running_time, guint64 * position);
+
+GST_API
 guint64      gst_segment_position_from_running_time (const GstSegment *segment, GstFormat format, guint64 running_time);
 
+GST_API
 gboolean     gst_segment_set_running_time    (GstSegment *segment, GstFormat format, guint64 running_time);
 
+GST_API
 gboolean     gst_segment_offset_running_time (GstSegment *segment, GstFormat format, gint64 offset);
 
+GST_API
 gboolean     gst_segment_clip                (const GstSegment *segment, GstFormat format, guint64 start,
                                               guint64 stop, guint64 *clip_start, guint64 *clip_stop);
-
-
+GST_API
 gboolean     gst_segment_do_seek             (GstSegment * segment, gdouble rate,
                                               GstFormat format, GstSeekFlags flags,
                                               GstSeekType start_type, guint64 start,
                                               GstSeekType stop_type, guint64 stop, gboolean * update);
+GST_API
 gboolean     gst_segment_is_equal            (const GstSegment * s0, const GstSegment * s1);
 
 #ifdef G_DEFINE_AUTOPTR_CLEANUP_FUNC

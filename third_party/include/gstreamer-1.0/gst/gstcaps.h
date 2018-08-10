@@ -28,7 +28,7 @@
 
 G_BEGIN_DECLS
 
-GST_EXPORT GType _gst_caps_type;
+GST_API GType _gst_caps_type;
 
 #define GST_TYPE_CAPS             (_gst_caps_type)
 #define GST_IS_CAPS(obj)          (GST_IS_MINI_OBJECT_TYPE((obj), GST_TYPE_CAPS))
@@ -136,8 +136,9 @@ typedef enum {
 typedef struct _GstCaps GstCaps;
 typedef struct _GstStaticCaps GstStaticCaps;
 
-GST_EXPORT GstCaps * _gst_caps_any;
-GST_EXPORT GstCaps * _gst_caps_none;
+GST_API GstCaps * _gst_caps_any;
+
+GST_API GstCaps * _gst_caps_none;
 /**
  * GST_CAPS_FLAGS:
  * @caps: a #GstCaps.
@@ -223,26 +224,10 @@ gst_caps_unref (GstCaps * caps)
 }
 
 /* copy caps */
-/**
- * gst_caps_copy:
- * @caps: a #GstCaps.
- *
- * Creates a new #GstCaps as a copy of the old @caps. The new caps will have a
- * refcount of 1, owned by the caller. The structures are copied as well.
- *
- * Note that this function is the semantic equivalent of a gst_caps_ref()
- * followed by a gst_caps_make_writable(). If you only want to hold on to a
- * reference to the data, you should use gst_caps_ref().
- *
- * When you are finished with the caps, call gst_caps_unref() on it.
- *
- * Returns: the new #GstCaps
- */
-static inline GstCaps *
-gst_caps_copy (const GstCaps * caps)
-{
-  return GST_CAPS (gst_mini_object_copy (GST_MINI_OBJECT_CAST (caps)));
-}
+GST_API
+GstCaps * gst_caps_copy (const GstCaps * caps);
+
+#define gst_caps_copy(caps) GST_CAPS (gst_mini_object_copy (GST_MINI_OBJECT_CAST (caps)))
 
 /**
  * gst_caps_is_writable:
@@ -395,110 +380,174 @@ typedef gboolean (*GstCapsFilterMapFunc) (GstCapsFeatures *features,
                                           gpointer user_data);
 
 
+GST_API
 GType             gst_caps_get_type                (void);
 
+GST_API
 GstCaps *         gst_caps_new_empty               (void);
+
+GST_API
 GstCaps *         gst_caps_new_any                 (void);
+
+GST_API
 GstCaps *         gst_caps_new_empty_simple        (const char    *media_type) G_GNUC_WARN_UNUSED_RESULT;
+
+GST_API
 GstCaps *         gst_caps_new_simple              (const char    *media_type,
                                                     const char    *fieldname,
                                                     ...) G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_new_full                (GstStructure  *struct1,
                                                     ...) G_GNUC_NULL_TERMINATED G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_new_full_valist         (GstStructure  *structure,
                                                     va_list        var_args) G_GNUC_WARN_UNUSED_RESULT;
-
+GST_API
 GType             gst_static_caps_get_type         (void);
+
+GST_API
 GstCaps *         gst_static_caps_get              (GstStaticCaps *static_caps);
+
+GST_API
 void              gst_static_caps_cleanup          (GstStaticCaps *static_caps);
 
 /* manipulation */
+
+GST_API
 void              gst_caps_append                  (GstCaps       *caps1,
                                                     GstCaps       *caps2);
+GST_API
 void              gst_caps_append_structure        (GstCaps       *caps,
                                                     GstStructure  *structure);
+GST_API
 void              gst_caps_append_structure_full   (GstCaps       *caps,
                                                     GstStructure  *structure,
                                                     GstCapsFeatures *features);
+GST_API
 void              gst_caps_remove_structure        (GstCaps       *caps, guint idx);
+
+GST_API
 GstCaps *         gst_caps_merge                   (GstCaps       *caps1,
                                                     GstCaps       *caps2) G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_merge_structure         (GstCaps       *caps,
                                                     GstStructure  *structure) G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_merge_structure_full    (GstCaps       *caps,
                                                     GstStructure  *structure,
                                                     GstCapsFeatures *features) G_GNUC_WARN_UNUSED_RESULT;
+
+GST_API
 guint             gst_caps_get_size                (const GstCaps *caps);
+
+GST_API
 GstStructure *    gst_caps_get_structure           (const GstCaps *caps,
                                                     guint          index);
+GST_API
 GstStructure *    gst_caps_steal_structure         (GstCaps       *caps,
                                                     guint          index) G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 void              gst_caps_set_features            (GstCaps *caps,
                                                     guint          index,
                                                     GstCapsFeatures * features);
+GST_API
 GstCapsFeatures * gst_caps_get_features            (const GstCaps *caps,
                                                     guint          index);
+GST_API
 GstCaps *         gst_caps_copy_nth                (const GstCaps *caps, guint nth) G_GNUC_WARN_UNUSED_RESULT;
+
+GST_API
 GstCaps *         gst_caps_truncate                (GstCaps       *caps) G_GNUC_WARN_UNUSED_RESULT;
+
+GST_API
 void              gst_caps_set_value               (GstCaps       *caps,
                                                     const char    *field,
                                                     const GValue  *value);
+GST_API
 void              gst_caps_set_simple              (GstCaps       *caps,
                                                     const char    *field, ...) G_GNUC_NULL_TERMINATED;
+GST_API
 void              gst_caps_set_simple_valist       (GstCaps       *caps,
                                                     const char    *field,
                                                     va_list        varargs);
-
+GST_API
 gboolean          gst_caps_foreach                 (const GstCaps       *caps,
                                                     GstCapsForeachFunc   func,
                                                     gpointer             user_data);
-
+GST_API
 gboolean          gst_caps_map_in_place            (GstCaps        *caps,
                                                     GstCapsMapFunc  func,
                                                     gpointer        user_data);
-
+GST_API
 void              gst_caps_filter_and_map_in_place (GstCaps              *caps,
                                                     GstCapsFilterMapFunc  func,
                                                     gpointer              user_data);
 
 /* tests */
+
+GST_API
 gboolean          gst_caps_is_any                  (const GstCaps *caps);
+
+GST_API
 gboolean          gst_caps_is_empty                (const GstCaps *caps);
+
+GST_API
 gboolean          gst_caps_is_fixed                (const GstCaps *caps);
+
+GST_API
 gboolean          gst_caps_is_always_compatible    (const GstCaps *caps1,
                                                     const GstCaps *caps2);
+GST_API
 gboolean          gst_caps_is_subset		   (const GstCaps *subset,
 						    const GstCaps *superset);
+GST_API
 gboolean          gst_caps_is_subset_structure     (const GstCaps *caps,
                                                     const GstStructure *structure);
+GST_API
 gboolean          gst_caps_is_subset_structure_full (const GstCaps *caps,
                                                      const GstStructure *structure,
                                                      const GstCapsFeatures *features);
+GST_API
 gboolean          gst_caps_is_equal		   (const GstCaps *caps1,
 						    const GstCaps *caps2);
+GST_API
 gboolean          gst_caps_is_equal_fixed          (const GstCaps *caps1,
 						    const GstCaps *caps2);
+GST_API
 gboolean          gst_caps_can_intersect           (const GstCaps * caps1,
 						    const GstCaps * caps2);
+GST_API
 gboolean          gst_caps_is_strictly_equal	   (const GstCaps *caps1,
 						    const GstCaps *caps2);
 
 
 /* operations */
+
+GST_API
 GstCaps *         gst_caps_intersect               (GstCaps *caps1,
 						    GstCaps *caps2) G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_intersect_full          (GstCaps *caps1,
 						    GstCaps *caps2,
                                                     GstCapsIntersectMode mode) G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_subtract		   (GstCaps *minuend,
 						    GstCaps *subtrahend) G_GNUC_WARN_UNUSED_RESULT;
+GST_API
 GstCaps *         gst_caps_normalize               (GstCaps *caps) G_GNUC_WARN_UNUSED_RESULT;
+
+GST_API
 GstCaps *         gst_caps_simplify                (GstCaps *caps) G_GNUC_WARN_UNUSED_RESULT;
 
+GST_API
 GstCaps *         gst_caps_fixate                  (GstCaps *caps) G_GNUC_WARN_UNUSED_RESULT;
 
 /* utility */
+
+GST_API
 gchar *           gst_caps_to_string               (const GstCaps *caps) G_GNUC_MALLOC;
+
+GST_API
 GstCaps *         gst_caps_from_string             (const gchar   *string) G_GNUC_WARN_UNUSED_RESULT;
 
 #ifdef G_DEFINE_AUTOPTR_CLEANUP_FUNC
