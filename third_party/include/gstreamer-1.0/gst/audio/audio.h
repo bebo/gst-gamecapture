@@ -23,14 +23,18 @@
 #define __GST_AUDIO_AUDIO_H__
 
 #include <gst/gst.h>
+#include <gst/audio/audio-prelude.h>
 #include <gst/audio/audio-enumtypes.h>
 #include <gst/audio/audio-format.h>
 #include <gst/audio/audio-channels.h>
 #include <gst/audio/audio-channel-mixer.h>
 #include <gst/audio/audio-info.h>
+#include <gst/audio/audio-buffer.h>
 #include <gst/audio/audio-quantize.h>
 #include <gst/audio/audio-converter.h>
 #include <gst/audio/audio-resampler.h>
+#include <gst/audio/gstaudiostreamalign.h>
+#include <gst/audio/gstaudioaggregator.h>
 
 G_BEGIN_DECLS
 
@@ -88,10 +92,14 @@ G_BEGIN_DECLS
  * handling
  */
 
+GST_AUDIO_API
 GstBuffer *    gst_audio_buffer_clip     (GstBuffer *buffer,
                                           const GstSegment *segment,
                                           gint rate, gint bpf);
 
+GST_EXPORT
+GstBuffer *    gst_audio_buffer_truncate (GstBuffer *buffer,
+                                          gint bpf, gsize trim, gsize samples);
 
 G_END_DECLS
 

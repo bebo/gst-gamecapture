@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -108,6 +108,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GProxy, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GProxyResolver, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GRemoteActionGroup, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GResolver, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GResource, g_resource_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSeekable, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettingsBackend, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GSettingsSchema, g_settings_schema_unref)

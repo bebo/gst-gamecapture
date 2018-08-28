@@ -102,6 +102,8 @@ typedef struct _GstAudioDecoderClass GstAudioDecoderClass;
 typedef struct _GstAudioDecoderPrivate GstAudioDecoderPrivate;
 
 /* do not use this one, use macro below */
+
+GST_AUDIO_API
 GstFlowReturn _gst_audio_decoder_error (GstAudioDecoder *dec, gint weight,
                                         GQuark domain, gint code,
                                         gchar *txt, gchar *debug,
@@ -312,90 +314,124 @@ struct _GstAudioDecoderClass
   gpointer       _gst_reserved[GST_PADDING_LARGE - 4];
 };
 
+GST_AUDIO_API
 GType             gst_audio_decoder_get_type (void);
 
+GST_AUDIO_API
 gboolean          gst_audio_decoder_set_output_format  (GstAudioDecoder    * dec,
                                                         const GstAudioInfo * info);
 
+GST_AUDIO_API
 GstCaps *         gst_audio_decoder_proxy_getcaps (GstAudioDecoder * decoder,
                                                    GstCaps         * caps,
                                                    GstCaps         * filter);
+
+GST_AUDIO_API
 gboolean          gst_audio_decoder_negotiate (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 GstFlowReturn     gst_audio_decoder_finish_frame (GstAudioDecoder * dec,
                                                   GstBuffer * buf, gint frames);
 
+GST_AUDIO_API
 GstBuffer *       gst_audio_decoder_allocate_output_buffer (GstAudioDecoder * dec,
                                                             gsize              size);
 
 /* context parameters */
+
+GST_AUDIO_API
 GstAudioInfo    * gst_audio_decoder_get_audio_info (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_plc_aware  (GstAudioDecoder * dec,
                                                     gboolean          plc);
 
+GST_AUDIO_API
 gint              gst_audio_decoder_get_plc_aware  (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_estimate_rate  (GstAudioDecoder * dec,
                                                     gboolean          enabled);
 
+GST_AUDIO_API
 gint              gst_audio_decoder_get_estimate_rate  (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 gint              gst_audio_decoder_get_delay      (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_max_errors (GstAudioDecoder * dec,
                                                    gint               num);
 
+GST_AUDIO_API
 gint              gst_audio_decoder_get_max_errors (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_latency (GstAudioDecoder * dec,
                                                  GstClockTime      min,
                                                  GstClockTime      max);
 
+GST_AUDIO_API
 void              gst_audio_decoder_get_latency (GstAudioDecoder * dec,
                                                  GstClockTime    * min,
                                                  GstClockTime    * max);
 
+GST_AUDIO_API
 void              gst_audio_decoder_get_parse_state (GstAudioDecoder * dec,
                                                      gboolean        * sync,
                                                      gboolean        * eos);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_allocation_caps (GstAudioDecoder * dec,
                                                          GstCaps         * allocation_caps);
 
 /* object properties */
+
+GST_AUDIO_API
 void              gst_audio_decoder_set_plc (GstAudioDecoder * dec,
                                              gboolean          enabled);
 
+GST_AUDIO_API
 gboolean          gst_audio_decoder_get_plc (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_min_latency (GstAudioDecoder * dec,
                                                      GstClockTime      num);
 
+GST_AUDIO_API
 GstClockTime      gst_audio_decoder_get_min_latency (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_tolerance   (GstAudioDecoder * dec,
                                                      GstClockTime      tolerance);
 
+GST_AUDIO_API
 GstClockTime      gst_audio_decoder_get_tolerance   (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_drainable (GstAudioDecoder * dec,
                                                    gboolean enabled);
 
+GST_AUDIO_API
 gboolean          gst_audio_decoder_get_drainable (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_needs_format (GstAudioDecoder * dec,
                                                       gboolean enabled);
 
+GST_AUDIO_API
 gboolean          gst_audio_decoder_get_needs_format (GstAudioDecoder * dec);
 
+GST_AUDIO_API
 void              gst_audio_decoder_get_allocator (GstAudioDecoder * dec,
                                                    GstAllocator ** allocator,
                                                    GstAllocationParams * params);
 
+GST_AUDIO_API
 void              gst_audio_decoder_merge_tags (GstAudioDecoder * dec,
                                                 const GstTagList * tags, GstTagMergeMode mode);
 
+GST_AUDIO_API
 void              gst_audio_decoder_set_use_default_pad_acceptcaps (GstAudioDecoder * decoder,
                                                                    gboolean use);
 

@@ -21,12 +21,8 @@
 #ifndef __GST_AGGREGATOR_H__
 #define __GST_AGGREGATOR_H__
 
-#ifndef GST_USE_UNSTABLE_API
-#warning "The Base library from gst-plugins-bad is unstable API and may change in future."
-#warning "You can define GST_USE_UNSTABLE_API to avoid this warning."
-#endif
-
 #include <gst/gst.h>
+#include <gst/base/base-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -60,7 +56,6 @@ typedef struct _GstAggregatorPadPrivate GstAggregatorPadPrivate;
 
 /**
  * GstAggregatorPad:
- * @buffer: currently queued buffer.
  * @segment: last segment received.
  *
  * The implementation the GstPad to use with #GstAggregator
@@ -69,12 +64,11 @@ struct _GstAggregatorPad
 {
   GstPad                       parent;
 
+  /*< public >*/
   /* Protected by the OBJECT_LOCK */
   GstSegment segment;
-  /* Segment to use in the clip function, before the queue */
-  GstSegment clip_segment;
 
-  /* < Private > */
+  /* < private > */
   GstAggregatorPadPrivate   *  priv;
 
   gpointer _gst_reserved[GST_PADDING];
@@ -82,31 +76,46 @@ struct _GstAggregatorPad
 
 /**
  * GstAggregatorPadClass:
- * @flush:    Optional
- *            Called when the pad has received a flush stop, this is the place
- *            to flush any information specific to the pad, it allows for individual
- *            pads to be flushed while others might not be.
+ * @flush:       Optional
+ *               Called when the pad has received a flush stop, this is the place
+ *               to flush any information specific to the pad, it allows for individual
+ *               pads to be flushed while others might not be.
+ * @skip_buffer: Optional
+ *               Called before input buffers are queued in the pad, return %TRUE
+ *               if the buffer should be skipped.
  *
  */
 struct _GstAggregatorPadClass
 {
   GstPadClass   parent_class;
 
-  GstFlowReturn (*flush)     (GstAggregatorPad * aggpad, GstAggregator * aggregator);
+  GstFlowReturn (*flush)       (GstAggregatorPad * aggpad, GstAggregator * aggregator);
+  gboolean      (*skip_buffer) (GstAggregatorPad * aggpad, GstAggregator * aggregator, GstBuffer * buffer);
 
   /*< private >*/
   gpointer      _gst_reserved[GST_PADDING_LARGE];
 };
 
+GST_BASE_API
 GType gst_aggregator_pad_get_type           (void);
 
 /****************************
  * GstAggregatorPad methods *
  ***************************/
 
-GstBuffer * gst_aggregator_pad_steal_buffer (GstAggregatorPad *  pad);
-GstBuffer * gst_aggregator_pad_get_buffer   (GstAggregatorPad *  pad);
+GST_BASE_API
+GstBuffer * gst_aggregator_pad_pop_buffer   (GstAggregatorPad *  pad);
+
+GST_BASE_API
+GstBuffer * gst_aggregator_pad_peek_buffer  (GstAggregatorPad *  pad);
+
+GST_BASE_API
 gboolean    gst_aggregator_pad_drop_buffer  (GstAggregatorPad *  pad);
+
+GST_BASE_API
+gboolean    gst_aggregator_pad_has_buffer   (GstAggregatorPad * pad);
+
+GST_BASE_API
 gboolean    gst_aggregator_pad_is_eos       (GstAggregatorPad *  pad);
 
 /*********************
@@ -121,12 +130,11 @@ gboolean    gst_aggregator_pad_is_eos       (GstAggregatorPad *  pad);
 #define GST_IS_AGGREGATOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AGGREGATOR))
 #define GST_IS_AGGREGATOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AGGREGATOR))
 
-#define GST_FLOW_NOT_HANDLED           GST_FLOW_CUSTOM_SUCCESS
+#define GST_AGGREGATOR_FLOW_NEED_DATA             GST_FLOW_CUSTOM_ERROR
 
 /**
  * GstAggregator:
  * @srcpad: the aggregator's source pad
- * @segment: the output segment
  *
  * Aggregator base class object structure.
  */
@@ -134,10 +142,8 @@ struct _GstAggregator
 {
   GstElement               parent;
 
+  /*< public >*/
   GstPad                *  srcpad;
-
-  /* Only access with the object lock held */
-  GstSegment               segment;
 
   /*< private >*/
   GstAggregatorPrivate  *  priv;
@@ -147,17 +153,25 @@ struct _GstAggregator
 
 /**
  * GstAggregatorClass:
- * @sinkpads_type:  Optional.
- *                  The type of the pads that should be created when
- *                  GstElement.request_new_pad is called.
  * @flush:          Optional.
- *                  Called after a succesful flushing seek, once all the flush
+ *                  Called after a successful flushing seek, once all the flush
  *                  stops have been received. Flush pad-specific data in
  *                  #GstAggregatorPad->flush.
  * @clip:           Optional.
- *                  Called when a buffer is received on a sink pad, the task
- *                  of clipping it and translating it to the current segment
- *                  falls on the subclass.
+ *                  Called when a buffer is received on a sink pad, the task of
+ *                  clipping it and translating it to the current segment falls
+ *                  on the subclass. The function should use the segment of data
+ *                  and the negotiated media type on the pad to perform
+ *                  clipping of input buffer. This function takes ownership of
+ *                  buf and should output a buffer or return NULL in
+ *                  if the buffer should be dropped.
+ * @finish_buffer:  Optional.
+ *                  Called when a subclass calls gst_aggregator_finish_buffer()
+ *                  from their aggregate function to push out a buffer.
+ *                  Subclasses can override this to modify or decorate buffers
+ *                  before they get pushed out. This function takes ownership
+ *                  of the buffer passed. Subclasses that override this method
+ *                  should always chain up to the parent class virtual method.
  * @sink_event:     Optional.
  *                  Called when an event is received on a sink pad, the subclass
  *                  should always chain up.
@@ -193,6 +207,29 @@ struct _GstAggregator
  *                  based aggregation to occur. Defaults to returning
  *                  GST_CLOCK_TIME_NONE causing the element to wait for buffers
  *                  on all sink pads before aggregating.
+ * @create_new_pad: Optional.
+ *                  Called when a new pad needs to be created. Allows subclass that
+ *                  don't have a single sink pad template to provide a pad based
+ *                  on the provided information.
+ * @update_src_caps: Lets subclasses update the #GstCaps representing
+ *                   the src pad caps before usage.  The result should end up
+ *                   in @ret. Return %GST_AGGREGATOR_FLOW_NEED_DATA to indicate that the
+ *                   element needs more information (caps, a buffer, etc) to
+ *                   choose the correct caps. Should return ANY caps if the
+ *                   stream has not caps at all.
+ * @fixate_src_caps: Optional.
+ *                   Fixate and return the src pad caps provided.  The function takes
+ *                   ownership of @caps and returns a fixated version of
+ *                   @caps. @caps is not guaranteed to be writable.
+ * @negotiated_src_caps: Optional.
+ *                       Notifies subclasses what caps format has been negotiated
+ * @decide_allocation: Optional.
+ *                     Allows the subclass to influence the allocation choices.
+ *                     Setup the allocation parameters for allocating output
+ *                     buffers. The passed in query contains the result of the
+ *                     downstream allocation query.
+ * @propose_allocation: Optional.
+ *                     Allows the subclass to handle the allocation query from upstream.
  *
  * The aggregator base class will handle in a thread-safe way all manners of
  * concurrent flushes, seeks, pad additions and removals, leaving to the
@@ -201,20 +238,20 @@ struct _GstAggregator
  *
  * It will also take care of event ordering (stream-start, segment, eos).
  *
- * Basically, a basic implementation will override @aggregate, and call
+ * Basically, a simple implementation will override @aggregate, and call
  * _finish_buffer from inside that function.
  */
 struct _GstAggregatorClass {
   GstElementClass   parent_class;
 
-  GType             sinkpads_type;
-
   GstFlowReturn     (*flush)          (GstAggregator    *  aggregator);
 
-  GstFlowReturn     (*clip)           (GstAggregator    *  aggregator,
+  GstBuffer *       (*clip)           (GstAggregator    *  aggregator,
                                        GstAggregatorPad *  aggregator_pad,
-                                       GstBuffer        *  buf,
-                                       GstBuffer        ** outbuf);
+                                       GstBuffer        *  buf);
+
+  GstFlowReturn     (*finish_buffer)  (GstAggregator    * aggregator,
+                                       GstBuffer        * buffer);
 
   /* sinkpads virtual methods */
   gboolean          (*sink_event)     (GstAggregator    *  aggregator,
@@ -250,6 +287,23 @@ struct _GstAggregatorClass {
                                         const gchar    * req_name,
                                         const GstCaps  * caps);
 
+  /**
+   * GstAggregatorClass::update_src_caps:
+   * @ret: (out) (allow-none):
+   */
+  GstFlowReturn     (*update_src_caps) (GstAggregator *  self,
+                                        GstCaps       *  caps,
+                                        GstCaps       ** ret);
+  GstCaps *         (*fixate_src_caps) (GstAggregator *  self,
+                                        GstCaps       *  caps);
+  gboolean          (*negotiated_src_caps) (GstAggregator *  self,
+                                            GstCaps      *  caps);
+  gboolean          (*decide_allocation) (GstAggregator * self,
+                                          GstQuery * query);
+  gboolean          (*propose_allocation) (GstAggregator * self,
+                                           GstAggregatorPad * pad,
+                                           GstQuery * decide_query,
+                                           GstQuery * query);
   /*< private >*/
   gpointer          _gst_reserved[GST_PADDING_LARGE];
 };
@@ -272,27 +326,36 @@ struct _GstAggregatorClass {
  * GstAggregator methods *
  ************************/
 
-GstFlowReturn  gst_aggregator_finish_buffer         (GstAggregator                *  self,
+GST_BASE_API
+GstFlowReturn  gst_aggregator_finish_buffer         (GstAggregator                *  aggregator,
                                                      GstBuffer                    *  buffer);
+
+GST_BASE_API
 void           gst_aggregator_set_src_caps          (GstAggregator                *  self,
                                                      GstCaps                      *  caps);
 
+GST_BASE_API
 void           gst_aggregator_set_latency           (GstAggregator                *  self,
                                                      GstClockTime                    min_latency,
                                                      GstClockTime                    max_latency);
 
+GST_BASE_API
 GType gst_aggregator_get_type(void);
 
-/* API that should eventually land in GstElement itself (FIXME) */
-typedef gboolean (*GstAggregatorPadForeachFunc)    (GstAggregator                 *  aggregator,
-                                                    GstAggregatorPad              *  aggregator_pad,
-                                                    gpointer                         user_data);
-
-gboolean gst_aggregator_iterate_sinkpads           (GstAggregator                 *  self,
-                                                    GstAggregatorPadForeachFunc      func,
-                                                    gpointer                         user_data);
-
+GST_BASE_API
 GstClockTime  gst_aggregator_get_latency           (GstAggregator                 *  self);
+
+GST_BASE_API
+GstBufferPool * gst_aggregator_get_buffer_pool     (GstAggregator                 * self);
+
+GST_BASE_API
+void            gst_aggregator_get_allocator       (GstAggregator                 * self,
+                                                    GstAllocator                 ** allocator,
+                                                    GstAllocationParams           * params);
+
+GST_BASE_API
+GstClockTime    gst_aggregator_simple_get_next_time (GstAggregator                * self);
+
 
 G_END_DECLS
 

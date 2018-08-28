@@ -36,6 +36,7 @@ typedef struct _GstMpegtsSection GstMpegtsSection;
 
 #define GST_MPEGTS_SECTION_TYPE(section) (GST_MPEGTS_SECTION (section)->section_type)
 
+GST_MPEGTS_API
 GType gst_mpegts_section_get_type (void);
 
 /**
@@ -176,6 +177,7 @@ struct _GstMpegtsSection
   gpointer _gst_reserved[GST_PADDING];
 };
 
+GST_MPEGTS_API
 GBytes *gst_mpegts_section_get_data (GstMpegtsSection *section);
 
 /* PAT */
@@ -195,16 +197,25 @@ struct _GstMpegtsPatProgram
   guint16 network_or_program_map_PID;
 };
 
+GST_MPEGTS_API
 GPtrArray *gst_mpegts_section_get_pat (GstMpegtsSection *section);
+
+GST_MPEGTS_API
 GType gst_mpegts_pat_program_get_type (void);
 
+GST_MPEGTS_API
 GPtrArray *gst_mpegts_pat_new (void);
+
+GST_MPEGTS_API
 GstMpegtsPatProgram *gst_mpegts_pat_program_new (void);
+
+GST_MPEGTS_API
 GstMpegtsSection *gst_mpegts_section_from_pat (GPtrArray * programs,
     guint16 ts_id);
 
 /* CAT */
 
+GST_MPEGTS_API
 GPtrArray *gst_mpegts_section_get_cat (GstMpegtsSection *section);
 
 /* PMT */
@@ -366,16 +377,27 @@ struct _GstMpegtsPMT
   GPtrArray *streams;
 };
 
+GST_MPEGTS_API
 GType gst_mpegts_pmt_get_type (void);
+
+GST_MPEGTS_API
 GType gst_mpegts_pmt_stream_get_type (void);
 
+GST_MPEGTS_API
 GstMpegtsPMT *gst_mpegts_pmt_new (void);
+
+GST_MPEGTS_API
 GstMpegtsPMTStream *gst_mpegts_pmt_stream_new (void);
+
+GST_MPEGTS_API
 const GstMpegtsPMT *gst_mpegts_section_get_pmt (GstMpegtsSection *section);
+
+GST_MPEGTS_API
 GstMpegtsSection *gst_mpegts_section_from_pmt (GstMpegtsPMT *pmt, guint16 pid);
 
 /* TSDT */
 
+GST_MPEGTS_API
 GPtrArray *gst_mpegts_section_get_tsdt (GstMpegtsSection *section);
 
 
@@ -384,16 +406,24 @@ GPtrArray *gst_mpegts_section_get_tsdt (GstMpegtsSection *section);
 #define gst_mpegts_section_ref(section)   ((GstMpegtsSection*) gst_mini_object_ref (GST_MINI_OBJECT_CAST (section)))
 #define gst_mpegts_section_unref(section) (gst_mini_object_unref (GST_MINI_OBJECT_CAST (section)))
 
+GST_MPEGTS_API
 GstMessage *gst_message_new_mpegts_section (GstObject *parent, GstMpegtsSection *section);
+
+GST_MPEGTS_API
 gboolean gst_mpegts_section_send_event (GstMpegtsSection * section, GstElement * element);
+
+GST_MPEGTS_API
 GstMpegtsSection *gst_event_parse_mpegts_section (GstEvent * event);
 
+GST_MPEGTS_API
 GstMpegtsSection *gst_message_parse_mpegts_section (GstMessage *message);
 
+GST_MPEGTS_API
 GstMpegtsSection *gst_mpegts_section_new (guint16 pid,
 					   guint8 * data,
 					   gsize data_size);
 
+GST_MPEGTS_API
 guint8 *gst_mpegts_section_packetize (GstMpegtsSection * section, gsize * output_size);
 
 G_END_DECLS

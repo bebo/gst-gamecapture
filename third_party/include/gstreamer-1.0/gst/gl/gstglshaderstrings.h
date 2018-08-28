@@ -21,20 +21,21 @@
 #ifndef __GST_GL_SHADER_STRINGS_H__
 #define __GST_GL_SHADER_STRINGS_H__
 
-#include <gst/gl/gl.h>
+#include <gst/gst.h>
+#include <gst/gl/gl-prelude.h>
 
 G_BEGIN_DECLS
 
-GST_EXPORT
+GST_GL_API
 const gchar *gst_gl_shader_string_vertex_default;
-GST_EXPORT
+GST_GL_API
 const gchar *gst_gl_shader_string_fragment_default;
 
-GST_EXPORT
+GST_GL_API
 const gchar *gst_gl_shader_string_vertex_mat4_texture_transform;
-GST_EXPORT
+GST_GL_API
 const gchar *gst_gl_shader_string_vertex_mat4_vertex_transform;
-GST_EXPORT
+GST_GL_API
 const gchar *gst_gl_shader_string_fragment_external_oes_default;
 
 G_END_DECLS

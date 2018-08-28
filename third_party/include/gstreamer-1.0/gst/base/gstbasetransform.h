@@ -22,6 +22,7 @@
 #define __GST_BASE_TRANSFORM_H__
 
 #include <gst/gst.h>
+#include <gst/base/base-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -198,7 +199,7 @@ struct _GstBaseTransform {
  *                  member variable. If the buffer is dropped due to QoS, it returns
  *                  GST_BASE_TRANSFORM_FLOW_DROPPED. If this input buffer is not
  *                  contiguous with any previous input buffer, then @is_discont
- *                  is set to #TRUE. (Since 1.6)
+ *                  is set to %TRUE. (Since 1.6)
  * @generate_output: Called after each new input buffer is submitted repeatedly
  *                   until it either generates an error or fails to generate an output
  *                   buffer. The default implementation takes the contents of the
@@ -244,12 +245,19 @@ struct _GstBaseTransformClass {
   gboolean      (*propose_allocation) (GstBaseTransform *trans, GstQuery *decide_query,
                                        GstQuery *query);
 
-  /* transform size */
+  /**
+   * GstBaseTransformClass::transform_size:
+   * @othersize: (out):
+   */
   gboolean      (*transform_size) (GstBaseTransform *trans,
                                    GstPadDirection direction,
                                    GstCaps *caps, gsize size,
                                    GstCaps *othercaps, gsize *othersize);
 
+  /**
+   * GstBaseTransformClass::get_unit_size:
+   * @size: (out):
+   */
   gboolean      (*get_unit_size)  (GstBaseTransform *trans, GstCaps *caps,
                                    gsize *size);
 
@@ -261,6 +269,10 @@ struct _GstBaseTransformClass {
   gboolean      (*sink_event)   (GstBaseTransform *trans, GstEvent *event);
   gboolean      (*src_event)    (GstBaseTransform *trans, GstEvent *event);
 
+  /**
+   * GstBaseTransformClass::prepare_output_buffer:
+   * @outbuf: (out):
+   */
   GstFlowReturn (*prepare_output_buffer) (GstBaseTransform * trans,
                                           GstBuffer *input, GstBuffer **outbuf);
 
@@ -278,45 +290,66 @@ struct _GstBaseTransformClass {
   GstFlowReturn (*transform_ip) (GstBaseTransform *trans, GstBuffer *buf);
 
   GstFlowReturn (*submit_input_buffer) (GstBaseTransform *trans, gboolean is_discont, GstBuffer *input);
+
+  /**
+   * GstBaseTransformClass::generate_output:
+   * @outbuf: (out):
+   */
   GstFlowReturn (*generate_output) (GstBaseTransform *trans, GstBuffer **outbuf);
 
   /*< private >*/
   gpointer       _gst_reserved[GST_PADDING_LARGE - 2];
 };
 
+GST_BASE_API
 GType           gst_base_transform_get_type         (void);
 
+GST_BASE_API
 void		gst_base_transform_set_passthrough  (GstBaseTransform *trans,
 	                                             gboolean passthrough);
+GST_BASE_API
 gboolean	gst_base_transform_is_passthrough   (GstBaseTransform *trans);
 
+GST_BASE_API
 void		gst_base_transform_set_in_place     (GstBaseTransform *trans,
 	                                             gboolean in_place);
+GST_BASE_API
 gboolean	gst_base_transform_is_in_place      (GstBaseTransform *trans);
 
+GST_BASE_API
 void		gst_base_transform_update_qos       (GstBaseTransform *trans,
 						     gdouble proportion,
 						     GstClockTimeDiff diff,
 						     GstClockTime timestamp);
+GST_BASE_API
 void		gst_base_transform_set_qos_enabled  (GstBaseTransform *trans,
 		                                     gboolean enabled);
+GST_BASE_API
 gboolean	gst_base_transform_is_qos_enabled   (GstBaseTransform *trans);
 
+GST_BASE_API
 void            gst_base_transform_set_gap_aware    (GstBaseTransform *trans,
                                                      gboolean gap_aware);
-
+GST_BASE_API
 void            gst_base_transform_set_prefer_passthrough (GstBaseTransform *trans,
                                                            gboolean prefer_passthrough);
-
+GST_BASE_API
 GstBufferPool * gst_base_transform_get_buffer_pool  (GstBaseTransform *trans);
+
+GST_BASE_API
 void            gst_base_transform_get_allocator    (GstBaseTransform *trans,
                                                      GstAllocator **allocator,
                                                      GstAllocationParams *params);
-
+GST_BASE_API
 void		gst_base_transform_reconfigure_sink (GstBaseTransform *trans);
+
+GST_BASE_API
 void		gst_base_transform_reconfigure_src  (GstBaseTransform *trans);
+
+GST_BASE_API
 gboolean gst_base_transform_update_src_caps (GstBaseTransform *trans,
                                              GstCaps *updated_caps);
+
 #ifdef G_DEFINE_AUTOPTR_CLEANUP_FUNC
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GstBaseTransform, gst_object_unref)
 #endif

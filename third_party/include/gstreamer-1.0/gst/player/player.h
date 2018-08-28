@@ -21,6 +21,7 @@
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
+#include <gst/player/player-prelude.h>
 #include <gst/player/gstplayer.h>
 #include <gst/player/gstplayer-media-info.h>
 #include <gst/player/gstplayer-g-main-context-signal-dispatcher.h>

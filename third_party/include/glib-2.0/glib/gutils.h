@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -83,7 +83,7 @@ GLIB_AVAILABLE_IN_ALL
 const gchar * const * g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void));
 #endif
 
-#if defined (G_OS_WIN32) && defined (G_CAN_INLINE) && !defined (__cplusplus)
+#if defined (G_OS_WIN32) && defined (G_CAN_INLINE)
 /* This function is not part of the public GLib API either. Just call
  * g_get_system_data_dirs() in your code, never mind that that is
  * actually a macro and you will in fact call this inline function.
@@ -181,7 +181,8 @@ typedef enum
 {
   G_FORMAT_SIZE_DEFAULT     = 0,
   G_FORMAT_SIZE_LONG_FORMAT = 1 << 0,
-  G_FORMAT_SIZE_IEC_UNITS   = 1 << 1
+  G_FORMAT_SIZE_IEC_UNITS   = 1 << 1,
+  G_FORMAT_SIZE_BITS        = 1 << 2
 } GFormatSizeFlags;
 
 GLIB_AVAILABLE_IN_2_30
@@ -190,7 +191,7 @@ gchar *g_format_size_full   (guint64          size,
 GLIB_AVAILABLE_IN_2_30
 gchar *g_format_size        (guint64          size);
 
-GLIB_DEPRECATED_FOR(g_format_size)
+GLIB_DEPRECATED_IN_2_30_FOR(g_format_size)
 gchar *g_format_size_for_display (goffset size);
 
 #ifndef G_DISABLE_DEPRECATED
@@ -302,6 +303,7 @@ g_bit_storage_impl (gulong number)
 /* Crashes the program. */
 #if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_50
 #ifndef G_OS_WIN32
+#  include <stdlib.h>
 #  define g_abort() abort ()
 #else
 GLIB_AVAILABLE_IN_2_50

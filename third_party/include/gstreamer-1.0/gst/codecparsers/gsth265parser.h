@@ -29,6 +29,7 @@
 #endif
 
 #include <gst/gst.h>
+#include <gst/codecparsers/codecparsers-prelude.h>
 
 G_BEGIN_DECLS
 
@@ -46,15 +47,79 @@ G_BEGIN_DECLS
  * @GST_H265_PROFILE_MAIN: Main profile (A.3.2)
  * @GST_H265_PROFILE_MAIN_10: Main 10 profile (A.3.3)
  * @GST_H265_PROFILE_MAIN_STILL_PICTURE: Main Still Picture profile (A.3.4)
+ * @GST_H265_PROFILE_MONOCHROME: Monochrome profile (A.3.4)
+ * @GST_H265_PROFILE_MONOCHROME_12: Monochrome 12-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MONOCHROME_16: Monochrome 16-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_12: Main profile 12-bits (A.3.4)
+ * @GST_H265_PROFILE_MAIN_422_10: Main 4:2:2 profile 10-bits (A.3.4)
+ * @GST_H265_PROFILE_MAIN_422_12: Main 4:2:2 profile 12-bits (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444: Main 4:4:4 profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_10: Main 4:4:4 10-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_12: Main 4:4:4 12-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_INTRA: Main Intra profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_10_INTRA: Main Intra 10-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_12_INTRA: Main Intra 12-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_422_10_INTRA: Main Intra 4:2:2 10-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_422_12_INTRA: Main Intra 4:2:2 12-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_INTRA: Main Intra 4:4:4 profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_10_INTRA: Main Intra 4:4:4 10-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_12_INTRA: Main Intra 4:4:4 12-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_16_INTRA: Main Intra 4:4:4 16-bits profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_STILL_PICTURE: Main 4:4:4 Still Picture profile (A.3.4)
+ * @GST_H265_PROFILE_MAIN_444_16_STILL_PICTURE: Main 4:4:4 16-bits Still Picture profile (A.3.4)
  *
  * H.265 Profiles.
  *
  */
 typedef enum {
+  GST_H265_PROFILE_INVALID              = -1,
   GST_H265_PROFILE_MAIN                 = 1,
   GST_H265_PROFILE_MAIN_10              = 2,
-  GST_H265_PROFILE_MAIN_STILL_PICTURE   = 3
+  GST_H265_PROFILE_MAIN_STILL_PICTURE   = 3,
+  GST_H265_PROFILE_MONOCHROME,
+  GST_H265_PROFILE_MONOCHROME_12,
+  GST_H265_PROFILE_MONOCHROME_16,
+  GST_H265_PROFILE_MAIN_12,
+  GST_H265_PROFILE_MAIN_422_10,
+  GST_H265_PROFILE_MAIN_422_12,
+  GST_H265_PROFILE_MAIN_444,
+  GST_H265_PROFILE_MAIN_444_10,
+  GST_H265_PROFILE_MAIN_444_12,
+  GST_H265_PROFILE_MAIN_INTRA,
+  GST_H265_PROFILE_MAIN_10_INTRA,
+  GST_H265_PROFILE_MAIN_12_INTRA,
+  GST_H265_PROFILE_MAIN_422_10_INTRA,
+  GST_H265_PROFILE_MAIN_422_12_INTRA,
+  GST_H265_PROFILE_MAIN_444_INTRA,
+  GST_H265_PROFILE_MAIN_444_10_INTRA,
+  GST_H265_PROFILE_MAIN_444_12_INTRA,
+  GST_H265_PROFILE_MAIN_444_16_INTRA,
+  GST_H265_PROFILE_MAIN_444_STILL_PICTURE,
+  GST_H265_PROFILE_MAIN_444_16_STILL_PICTURE,
 } GstH265Profile;
+
+/**
+ * GstH265ProfileIDC:
+ * @GST_H265_PROFILE_IDC_MAIN: Main profile (A.3.2)
+ * @GST_H265_PROFILE_IDC_MAIN_10: Main 10 profile (A.3.3)
+ * @GST_H265_PROFILE_IDC_MAIN_STILL_PICTURE: Main Still Picture profile (A.3.4)
+ * @GST_H265_PROFILE_IDC_FORMAT_RANGE_EXTENSION: Format range extensions profile (A.3.5)
+ * @GST_H265_PROFILE_IDC_HIGH_THROUGHPUT: High throughput profiles (A.3.6)
+ * @GST_H265_PROFILE_IDC_SCREEN_CONTENT_CODING: Screen content coding extensions profiles (A.3.7)
+ *
+ * Valid values for the profile_idc field. This is different from
+ * #GstH265Profile as an extension idc can be used to encode a whole variety of
+ * profiles.
+ *
+ */
+typedef enum {
+  GST_H265_PROFILE_IDC_MAIN                   = 1,
+  GST_H265_PROFILE_IDC_MAIN_10                = 2,
+  GST_H265_PROFILE_IDC_MAIN_STILL_PICTURE     = 3,
+  GST_H265_PROFILE_IDC_FORMAT_RANGE_EXTENSION = 4,
+  GST_H265_PROFILE_IDC_HIGH_THROUGHPUT        = 5,
+  GST_H265_PROFILE_IDC_SCREEN_CONTENT_CODING  = 9,
+} GstH265ProfileIDC;
 
 /**
  * GstH265NalUnitType:
@@ -292,6 +357,16 @@ struct _GstH265NalUnit
  * @non_packed_constraint_flag: indicate the presence of frame packing
  *   arragement sei message
  * @frame_only_constraint_flag: recognize the field_seq_flag
+ * @max_12bit_constraint_flag: used to define profile extensions, see Annex A
+ * @max_10bit_constraint_flag: used to define profile extensions, see Annex A
+ * @max_8bit_constraint_flag: used to define profile extensions, see Annex A
+ * @max_422chroma_constraint_flag: used to define profile extensions, see Annex A
+ * @max_420chroma_constraint_flag: used to define profile extensions, see Annex A
+ * @max_monochrome_constraint_flag: used to define profile extensions, see Annex A
+ * @intra_constraint_flag: used to define profile extensions, see Annex A
+ * @one_picture_only_constraint_flag: used to define profile extensions, see Annex A
+ * @lower_bit_rate_constraint_flag: used to define profile extensions, see Annex A
+ * @max_14bit_constraint_flag: used to define profile extensions, see Annex A
  * @level idc: indicate the level which the CVS confirms
  * @sub_layer_profile_present_flag: sublayer profile presence ind
  * @sub_layer_level_present_flag:sublayer level presence indicator.
@@ -320,6 +395,18 @@ struct _GstH265ProfileTierLevel {
   guint8 interlaced_source_flag;
   guint8 non_packed_constraint_flag;
   guint8 frame_only_constraint_flag;
+
+  guint8 max_12bit_constraint_flag;
+  guint8 max_10bit_constraint_flag;
+  guint8 max_8bit_constraint_flag;
+  guint8 max_422chroma_constraint_flag;
+  guint8 max_420chroma_constraint_flag;
+  guint8 max_monochrome_constraint_flag;
+  guint8 intra_constraint_flag;
+  guint8 one_picture_only_constraint_flag;
+  guint8 lower_bit_rate_constraint_flag;
+  guint8 max_14bit_constraint_flag;
+
   guint8 level_idc;
 
   guint8 sub_layer_profile_present_flag[6];
@@ -997,20 +1084,24 @@ struct _GstH265Parser
   GstH265PPS *last_pps;
 };
 
+GST_CODEC_PARSERS_API
 GstH265Parser *     gst_h265_parser_new               (void);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_identify_nalu      (GstH265Parser  * parser,
                                                         const guint8   * data,
                                                         guint            offset,
                                                         gsize            size,
                                                         GstH265NalUnit * nalu);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_identify_nalu_unchecked (GstH265Parser * parser,
                                                         const guint8   * data,
                                                         guint            offset,
                                                         gsize            size,
                                                         GstH265NalUnit * nalu);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_identify_nalu_hevc (GstH265Parser  * parser,
                                                         const guint8   * data,
                                                         guint            offset,
@@ -1018,63 +1109,81 @@ GstH265ParserResult gst_h265_parser_identify_nalu_hevc (GstH265Parser  * parser,
                                                         guint8           nal_length_size,
                                                         GstH265NalUnit * nalu);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_parse_nal       (GstH265Parser   * parser,
                                                      GstH265NalUnit  * nalu);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_parse_slice_hdr (GstH265Parser   * parser,
                                                      GstH265NalUnit  * nalu,
                                                      GstH265SliceHdr * slice);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_parse_vps       (GstH265Parser   * parser,
                                                      GstH265NalUnit  * nalu,
                                                      GstH265VPS      * vps);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_parse_sps       (GstH265Parser   * parser,
                                                      GstH265NalUnit  * nalu,
                                                      GstH265SPS      * sps,
                                                      gboolean          parse_vui_params);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_parse_pps       (GstH265Parser   * parser,
                                                      GstH265NalUnit  * nalu,
                                                      GstH265PPS      * pps);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parser_parse_sei       (GstH265Parser   * parser,
                                                      GstH265NalUnit  * nalu,
                                                      GArray **messages);
 
+GST_CODEC_PARSERS_API
 void                gst_h265_parser_free            (GstH265Parser  * parser);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parse_vps              (GstH265NalUnit * nalu,
                                                      GstH265VPS     * vps);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parse_sps              (GstH265Parser  * parser,
                                                      GstH265NalUnit * nalu,
                                                      GstH265SPS     * sps,
                                                      gboolean         parse_vui_params);
 
+GST_CODEC_PARSERS_API
 GstH265ParserResult gst_h265_parse_pps              (GstH265Parser  * parser,
                                                      GstH265NalUnit * nalu,
                                                      GstH265PPS     * pps);
 
+GST_CODEC_PARSERS_API
 gboolean            gst_h265_slice_hdr_copy (GstH265SliceHdr       * dst_slice,
                                              const GstH265SliceHdr * src_slice);
 
+GST_CODEC_PARSERS_API
 void                gst_h265_slice_hdr_free (GstH265SliceHdr * slice_hdr);
 
+GST_CODEC_PARSERS_API
 gboolean            gst_h265_sei_copy       (GstH265SEIMessage       * dest_sei,
                                              const GstH265SEIMessage * src_sei);
 
+GST_CODEC_PARSERS_API
 void                gst_h265_sei_free       (GstH265SEIMessage * sei);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_4x4_get_zigzag_from_raster (guint8 out_quant[16],
                                                           const guint8 quant[16]);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_4x4_get_raster_from_zigzag (guint8 out_quant[16],
                                                           const guint8 quant[16]);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_8x8_get_zigzag_from_raster (guint8 out_quant[64],
                                                           const guint8 quant[64]);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_8x8_get_raster_from_zigzag (guint8 out_quant[64],
                                                           const guint8 quant[64]);
 
@@ -1087,15 +1196,19 @@ void    gst_h265_quant_matrix_8x8_get_raster_from_zigzag (guint8 out_quant[64],
 #define gst_h265_quant_matrix_32x32_get_raster_from_zigzag \
         gst_h265_quant_matrix_8x8_get_raster_from_zigzag
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_4x4_get_uprightdiagonal_from_raster (guint8 out_quant[16],
                                                           const guint8 quant[16]);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_4x4_get_raster_from_uprightdiagonal (guint8 out_quant[16],
                                                           const guint8 quant[16]);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_8x8_get_uprightdiagonal_from_raster (guint8 out_quant[64],
                                                           const guint8 quant[64]);
 
+GST_CODEC_PARSERS_API
 void    gst_h265_quant_matrix_8x8_get_raster_from_uprightdiagonal (guint8 out_quant[64],
                                                           const guint8 quant[64]);
 
@@ -1107,6 +1220,9 @@ void    gst_h265_quant_matrix_8x8_get_raster_from_uprightdiagonal (guint8 out_qu
         gst_h265_quant_matrix_8x8_get_uprightdiagonal_from_raster
 #define gst_h265_quant_matrix_32x32_get_raster_from_uprightdiagonal\
         gst_h265_quant_matrix_8x8_get_raster_from_uprightdiagonal
+
+GST_CODEC_PARSERS_API
+GstH265Profile gst_h265_profile_tier_level_get_profile (GstH265ProfileTierLevel * ptl);
 
 G_END_DECLS
 #endif

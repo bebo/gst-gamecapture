@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,12 +30,16 @@
 
 G_BEGIN_DECLS
 
+#ifndef G_DISABLE_DEPRECATED
 /**
  * G_VOLUME_IDENTIFIER_KIND_HAL_UDI:
  *
  * The string used to obtain a Hal UDI with g_volume_get_identifier().
+ *
+ * Deprecated: 2.58: Do not use, HAL is deprecated.
  */
 #define G_VOLUME_IDENTIFIER_KIND_HAL_UDI "hal-udi"
+#endif /* G_DISABLE_DEPRECATED */
 
 /**
  * G_VOLUME_IDENTIFIER_KIND_UNIX_DEVICE:

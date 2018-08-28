@@ -50,28 +50,43 @@ G_BEGIN_DECLS
 #define GST_IS_ELEMENT_FACTORY_CLASS(klass)     (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_ELEMENT_FACTORY))
 #define GST_ELEMENT_FACTORY_CAST(obj)           ((GstElementFactory *)(obj))
 
+GST_API
 GType                   gst_element_factory_get_type            (void);
 
+GST_API
 GstElementFactory *     gst_element_factory_find                (const gchar *name);
 
+GST_API
 GType                   gst_element_factory_get_element_type    (GstElementFactory *factory);
 
+GST_API
 const gchar *           gst_element_factory_get_metadata        (GstElementFactory *factory, const gchar *key);
+
+GST_API
 gchar **                gst_element_factory_get_metadata_keys   (GstElementFactory *factory);
 
+GST_API
 guint                   gst_element_factory_get_num_pad_templates (GstElementFactory *factory);
+
+GST_API
 const GList *           gst_element_factory_get_static_pad_templates (GstElementFactory *factory);
 
+GST_API
 GstURIType              gst_element_factory_get_uri_type        (GstElementFactory *factory);
+
+GST_API
 const gchar * const *   gst_element_factory_get_uri_protocols   (GstElementFactory *factory);
 
+GST_API
 gboolean                gst_element_factory_has_interface       (GstElementFactory *factory,
                                                                  const gchar *interfacename);
-
+GST_API
 GstElement*             gst_element_factory_create              (GstElementFactory *factory,
                                                                  const gchar *name) G_GNUC_MALLOC;
+GST_API
 GstElement*             gst_element_factory_make                (const gchar *factoryname, const gchar *name) G_GNUC_MALLOC;
 
+GST_API
 gboolean                gst_element_register                    (GstPlugin *plugin, const gchar *name,
                                                                  guint rank, GType type);
 
@@ -168,7 +183,7 @@ typedef guint64 GstElementFactoryListType;
 #define GST_ELEMENT_FACTORY_TYPE_AUDIOVIDEO_SINKS ((GstElementFactoryListType)(GST_ELEMENT_FACTORY_TYPE_SINK | GST_ELEMENT_FACTORY_TYPE_MEDIA_AUDIO | GST_ELEMENT_FACTORY_TYPE_MEDIA_VIDEO | GST_ELEMENT_FACTORY_TYPE_MEDIA_IMAGE))
 
 /**
- * GST_ELEMENT_FACTORY_TYPE_DECODABLE: (value 353) (type GstElementFactoryListType)
+ * GST_ELEMENT_FACTORY_TYPE_DECODABLE: (value 1377) (type GstElementFactoryListType)
  *
  * All elements used to 'decode' streams (decoders, demuxers, parsers, depayloaders)
  */
@@ -195,13 +210,16 @@ typedef guint64 GstElementFactoryListType;
 #define GST_ELEMENT_FACTORY_KLASS_MEDIA_SUBTITLE        "Subtitle"
 #define GST_ELEMENT_FACTORY_KLASS_MEDIA_METADATA        "Metadata"
 
+GST_API
 gboolean      gst_element_factory_list_is_type      (GstElementFactory *factory,
                                                      GstElementFactoryListType type);
 
+GST_API
 GList *       gst_element_factory_list_get_elements (GstElementFactoryListType type,
                                                      GstRank minrank) G_GNUC_MALLOC;
 
 
+GST_API
 GList *       gst_element_factory_list_filter       (GList *list, const GstCaps *caps,
                                                      GstPadDirection direction,
                                                      gboolean subsetonly) G_GNUC_MALLOC;

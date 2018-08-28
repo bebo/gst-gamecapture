@@ -54,7 +54,7 @@ G_BEGIN_DECLS
  * In this case the importer element should check all incomming memory using
  * gst_is_dmabuf_memory().
  *
- * Since: 1.11
+ * Since: 1.12
  */
 #define GST_CAPS_FEATURE_MEMORY_DMABUF "memory:DMABuf"
 
@@ -95,14 +95,22 @@ struct _GstDmaBufAllocatorClass
 };
 
 
-GType gst_dmabuf_allocator_get_type (void);
+GST_ALLOCATORS_API
+GType          gst_dmabuf_allocator_get_type (void);
 
+GST_ALLOCATORS_API
 GstAllocator * gst_dmabuf_allocator_new (void);
 
+GST_ALLOCATORS_API
 GstMemory    * gst_dmabuf_allocator_alloc (GstAllocator * allocator, gint fd, gsize size);
 
+GST_ALLOCATORS_API
+GstMemory    * gst_dmabuf_allocator_alloc_with_flags (GstAllocator * allocator, gint fd, gsize size, GstFdMemoryFlags flags);
+
+GST_ALLOCATORS_API
 gint           gst_dmabuf_memory_get_fd (GstMemory * mem);
 
+GST_ALLOCATORS_API
 gboolean       gst_is_dmabuf_memory (GstMemory * mem);
 
 

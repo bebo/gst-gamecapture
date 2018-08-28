@@ -28,6 +28,7 @@
 #endif
 
 #include <gst/gst.h>
+#include "basecamerabinsrc-prelude.h"
 
 typedef struct
 {
@@ -47,10 +48,19 @@ typedef struct
 
 } GstCameraBinPreviewPipelineData;
 
+GST_BASE_CAMERA_BIN_SRC_API
 GstCameraBinPreviewPipelineData *gst_camerabin_create_preview_pipeline (GstElement * element, GstElement * filter);
+
+GST_BASE_CAMERA_BIN_SRC_API
 void gst_camerabin_destroy_preview_pipeline (GstCameraBinPreviewPipelineData * preview);
+
+GST_BASE_CAMERA_BIN_SRC_API
 gboolean gst_camerabin_preview_pipeline_post (GstCameraBinPreviewPipelineData * preview, GstSample * sample);
+
+GST_BASE_CAMERA_BIN_SRC_API
 void gst_camerabin_preview_set_caps (GstCameraBinPreviewPipelineData * preview, GstCaps * caps);
+
+GST_BASE_CAMERA_BIN_SRC_API
 gboolean gst_camerabin_preview_set_filter (GstCameraBinPreviewPipelineData * preview, GstElement * filter);
 
 #endif /* #ifndef __CAMERABIN_PREVIEW_H_ */

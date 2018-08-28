@@ -22,6 +22,7 @@
 #ifndef __GST_RIFF_H__
 #define __GST_RIFF_H__
 
+#include <gst/riff/riff-prelude.h>
 #include <gst/riff/riff-ids.h>
 #include <gst/riff/riff-media.h>
 #include <gst/riff/riff-read.h>

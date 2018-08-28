@@ -188,6 +188,7 @@ typedef enum
 /**
  * GstAudioFormatUnpack:
  * @info: a #GstAudioFormatInfo
+ * @flags: #GstAudioPackFlags
  * @dest: (array) (element-type guint8): a destination array
  * @data: (array) (element-type guint8): pointer to the audio data
  * @length: the amount of samples to unpack.
@@ -203,6 +204,7 @@ typedef void (*GstAudioFormatUnpack)         (const GstAudioFormatInfo *info,
 /**
  * GstAudioFormatPack:
  * @info: a #GstAudioFormatInfo
+ * @flags: #GstAudioPackFlags
  * @src: (array) (element-type guint8): a source array
  * @data: (array) (element-type guint8): pointer to the destination
  *   data
@@ -233,6 +235,7 @@ typedef void (*GstAudioFormatPack)           (const GstAudioFormatInfo *info,
  * Information for an audio format.
  */
 struct _GstAudioFormatInfo {
+  /*< public >*/
   GstAudioFormat format;
   const gchar *name;
   const gchar *description;
@@ -250,6 +253,7 @@ struct _GstAudioFormatInfo {
   gpointer _gst_reserved[GST_PADDING];
 };
 
+GST_AUDIO_API
 GType gst_audio_format_info_get_type (void);
 
 #define GST_AUDIO_FORMAT_INFO_FORMAT(info)           ((info)->format)
@@ -267,15 +271,21 @@ GType gst_audio_format_info_get_type (void);
 #define GST_AUDIO_FORMAT_INFO_DEPTH(info)            ((info)->depth)
 
 
+GST_AUDIO_API
 GstAudioFormat gst_audio_format_build_integer    (gboolean sign, gint endianness,
                                                   gint width, gint depth) G_GNUC_CONST;
 
+GST_AUDIO_API
 GstAudioFormat gst_audio_format_from_string      (const gchar *format) G_GNUC_CONST;
+
+GST_AUDIO_API
 const gchar *  gst_audio_format_to_string        (GstAudioFormat format) G_GNUC_CONST;
 
+GST_AUDIO_API
 const GstAudioFormatInfo *
                gst_audio_format_get_info         (GstAudioFormat format) G_GNUC_CONST;
 
+GST_AUDIO_API
 void           gst_audio_format_fill_silence     (const GstAudioFormatInfo *info,
                                                   gpointer dest, gsize length);
 

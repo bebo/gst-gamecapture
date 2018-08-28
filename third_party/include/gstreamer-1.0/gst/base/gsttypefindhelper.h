@@ -25,19 +25,38 @@
 #define __GST_TYPEFINDHELPER_H__
 
 #include <gst/gst.h>
+#include <gst/base/base-prelude.h>
 
 G_BEGIN_DECLS
 
+GST_BASE_API
 GstCaps * gst_type_find_helper (GstPad *src, guint64 size);
 
+GST_BASE_API
 GstCaps * gst_type_find_helper_for_data   (GstObject              *obj,
                                            const guint8           *data,
                                            gsize                   size,
                                            GstTypeFindProbability *prob);
+
+GST_BASE_API
+GstCaps * gst_type_find_helper_for_data_with_extension (GstObject              *obj,
+                                                        const guint8           *data,
+                                                        gsize                   size,
+                                                        const gchar            *extension,
+                                                        GstTypeFindProbability *prob);
+
+GST_BASE_API
 GstCaps * gst_type_find_helper_for_buffer (GstObject              *obj,
                                            GstBuffer              *buf,
                                            GstTypeFindProbability *prob);
 
+GST_BASE_API
+GstCaps * gst_type_find_helper_for_buffer_with_extension (GstObject              *obj,
+                                                          GstBuffer              *buf,
+                                                          const gchar            *extension,
+                                                          GstTypeFindProbability *prob);
+
+GST_BASE_API
 GstCaps * gst_type_find_helper_for_extension (GstObject * obj,
                                               const gchar * extension);
 
@@ -47,7 +66,7 @@ GstCaps * gst_type_find_helper_for_extension (GstObject * obj,
  * @parent: (allow-none): the parent of @obj or %NULL
  * @offset: the offset of the range
  * @length: the length of the range
- * @buffer: a memory location to hold the result buffer
+ * @buffer: (out): a memory location to hold the result buffer
  *
  * This function will be called by gst_type_find_helper_get_range() when
  * typefinding functions request to peek at the data of a stream at certain
@@ -64,13 +83,22 @@ typedef GstFlowReturn (*GstTypeFindHelperGetRangeFunction) (GstObject  *obj,
                                                             guint64     offset,
                                                             guint       length,
                                                             GstBuffer **buffer);
-
+GST_BASE_API
 GstCaps * gst_type_find_helper_get_range (GstObject                         *obj,
                                           GstObject                         *parent,
                                           GstTypeFindHelperGetRangeFunction  func,
                                           guint64                            size,
                                           const gchar                       *extension,
                                           GstTypeFindProbability            *prob);
+
+GST_BASE_API
+GstFlowReturn gst_type_find_helper_get_range_full (GstObject                         *obj,
+                                                   GstObject                         *parent,
+                                                   GstTypeFindHelperGetRangeFunction  func,
+                                                   guint64                            size,
+                                                   const gchar                       *extension,
+                                                   GstCaps                          **caps,
+                                                   GstTypeFindProbability            *prob);
 
 G_END_DECLS
 

@@ -21,6 +21,8 @@
 #ifndef __GST_NET_H__
 #define __GST_NET_H__
 
+#include <gst/net/net-prelude.h>
+
 #include <gst/net/gstnetaddressmeta.h>
 #include <gst/net/gstnetclientclock.h>
 #include <gst/net/gstnettimepacket.h>

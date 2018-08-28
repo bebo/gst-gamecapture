@@ -29,6 +29,7 @@
 #warning "You can define GST_USE_UNSTABLE_API to avoid this warning."
 #endif
 
+#include <gst/mpegts/mpegts-prelude.h>
 #include <gst/mpegts/gstmpegtsdescriptor.h>
 #include <gst/mpegts/gst-dvb-descriptor.h>
 #include <gst/mpegts/gstmpegtssection.h>
@@ -39,6 +40,7 @@
 
 G_BEGIN_DECLS
 
+GST_MPEGTS_API
 void gst_mpegts_initialize (void);
 
 G_END_DECLS

@@ -76,21 +76,33 @@ struct _GstVideoMeta {
   gboolean (*unmap)  (GstVideoMeta *meta, guint plane, GstMapInfo *info);
 };
 
+GST_VIDEO_API
 GType gst_video_meta_api_get_type (void);
+
+GST_VIDEO_API
 const GstMetaInfo * gst_video_meta_get_info (void);
 
+GST_VIDEO_API
 GstVideoMeta * gst_buffer_get_video_meta (GstBuffer *buffer);
+
+GST_VIDEO_API
 GstVideoMeta * gst_buffer_get_video_meta_id    (GstBuffer *buffer, gint id);
 
+GST_VIDEO_API
 GstVideoMeta * gst_buffer_add_video_meta       (GstBuffer *buffer, GstVideoFrameFlags flags,
                                                 GstVideoFormat format, guint width, guint height);
+
+GST_VIDEO_API
 GstVideoMeta * gst_buffer_add_video_meta_full  (GstBuffer *buffer, GstVideoFrameFlags flags,
                                                 GstVideoFormat format, guint width, guint height,
                                                 guint n_planes, gsize offset[GST_VIDEO_MAX_PLANES],
                                                 gint stride[GST_VIDEO_MAX_PLANES]);
 
+GST_VIDEO_API
 gboolean       gst_video_meta_map        (GstVideoMeta *meta, guint plane, GstMapInfo *info,
                                           gpointer *data, gint *stride, GstMapFlags flags);
+
+GST_VIDEO_API
 gboolean       gst_video_meta_unmap      (GstVideoMeta *meta, guint plane, GstMapInfo *info);
 
 /**
@@ -112,7 +124,10 @@ struct _GstVideoCropMeta {
   guint         height;
 };
 
+GST_VIDEO_API
 GType gst_video_crop_meta_api_get_type (void);
+
+GST_VIDEO_API
 const GstMetaInfo * gst_video_crop_meta_get_info (void);
 
 #define gst_buffer_get_video_crop_meta(b) ((GstVideoCropMeta*)gst_buffer_get_meta((b),GST_VIDEO_CROP_META_API_TYPE))
@@ -120,6 +135,7 @@ const GstMetaInfo * gst_video_crop_meta_get_info (void);
 
 /* video metadata transforms */
 
+GST_VIDEO_API
 GQuark gst_video_meta_transform_scale_get_quark (void);
 /**
  * gst_video_meta_transform_scale:
@@ -231,10 +247,15 @@ struct _GstVideoGLTextureUploadMeta {
   GBoxedFreeFunc user_data_free;
 };
 
+GST_VIDEO_API
 GType gst_video_gl_texture_upload_meta_api_get_type (void);
+
+GST_VIDEO_API
 const GstMetaInfo * gst_video_gl_texture_upload_meta_get_info (void);
 
 #define gst_buffer_get_video_gl_texture_upload_meta(b) ((GstVideoGLTextureUploadMeta*)gst_buffer_get_meta((b),GST_VIDEO_GL_TEXTURE_UPLOAD_META_API_TYPE))
+
+GST_VIDEO_API
 GstVideoGLTextureUploadMeta *
           gst_buffer_add_video_gl_texture_upload_meta (GstBuffer *buffer,
                                                        GstVideoGLTextureOrientation texture_orientation,
@@ -244,6 +265,8 @@ GstVideoGLTextureUploadMeta *
                                                        gpointer user_data,
                                                        GBoxedCopyFunc user_data_copy,
                                                        GBoxedFreeFunc user_data_free);
+
+GST_VIDEO_API
 gboolean  gst_video_gl_texture_upload_meta_upload     (GstVideoGLTextureUploadMeta *meta,
                                                        guint texture_id[4]);
 
@@ -258,6 +281,7 @@ gboolean  gst_video_gl_texture_upload_meta_upload     (GstVideoGLTextureUploadMe
  * @y: y component of upper-left corner
  * @w: bounding box width
  * @h: bounding box height
+ * @params: list of #GstStructure containing element-specific params for downstream, see gst_video_region_of_interest_meta_add_params(). (Since: 1.14)
  *
  * Extra buffer metadata describing an image region of interest
  */
@@ -272,29 +296,45 @@ typedef struct {
   guint y;
   guint w;
   guint h;
+
+  GList *params;
 } GstVideoRegionOfInterestMeta;
 
+GST_VIDEO_API
 GType              gst_video_region_of_interest_meta_api_get_type (void);
 #define GST_VIDEO_REGION_OF_INTEREST_META_API_TYPE (gst_video_region_of_interest_meta_api_get_type())
+GST_VIDEO_API
 const GstMetaInfo *gst_video_region_of_interest_meta_get_info (void);
 #define GST_VIDEO_REGION_OF_INTEREST_META_INFO (gst_video_region_of_interest_meta_get_info())
 
 #define gst_buffer_get_video_region_of_interest_meta(b) \
         ((GstVideoRegionOfInterestMeta*)gst_buffer_get_meta((b),GST_VIDEO_REGION_OF_INTEREST_META_API_TYPE))
+GST_VIDEO_API
 GstVideoRegionOfInterestMeta *gst_buffer_get_video_region_of_interest_meta_id (GstBuffer   * buffer,
                                                                                gint          id);
+
+GST_VIDEO_API
 GstVideoRegionOfInterestMeta *gst_buffer_add_video_region_of_interest_meta    (GstBuffer   * buffer,
 									       const gchar * roi_type,
 									       guint         x,
                                                                                guint         y,
                                                                                guint         w,
                                                                                guint         h);
+
+GST_VIDEO_API
 GstVideoRegionOfInterestMeta *gst_buffer_add_video_region_of_interest_meta_id (GstBuffer   * buffer, 
 									       GQuark        roi_type,
                                                                                guint         x,
                                                                                guint         y,
                                                                                guint         w,
                                                                                guint         h);
+GST_VIDEO_API
+void gst_video_region_of_interest_meta_add_param (GstVideoRegionOfInterestMeta * meta,
+                                                  GstStructure * s);
+
+GST_VIDEO_API
+GstStructure *gst_video_region_of_interest_meta_get_param (GstVideoRegionOfInterestMeta * meta,
+                                                           const gchar * name);
 
 /**
  * GstVideoTimeCodeMeta:
@@ -314,16 +354,22 @@ typedef struct {
   GstVideoTimeCode tc;
 } GstVideoTimeCodeMeta;
 
+GST_VIDEO_API
 GType              gst_video_time_code_meta_api_get_type (void);
 #define GST_VIDEO_TIME_CODE_META_API_TYPE (gst_video_time_code_meta_api_get_type())
+
+GST_VIDEO_API
 const GstMetaInfo *gst_video_time_code_meta_get_info (void);
 #define GST_VIDEO_TIME_CODE_META_INFO (gst_video_time_code_meta_get_info())
 
 #define gst_buffer_get_video_time_code_meta(b) \
         ((GstVideoTimeCodeMeta*)gst_buffer_get_meta((b),GST_VIDEO_TIME_CODE_META_API_TYPE))
+
+GST_VIDEO_API
 GstVideoTimeCodeMeta *gst_buffer_add_video_time_code_meta    (GstBuffer             * buffer,
                                                               GstVideoTimeCode      * tc);
 
+GST_VIDEO_API
 GstVideoTimeCodeMeta *
 gst_buffer_add_video_time_code_meta_full                     (GstBuffer             * buffer,
                                                               guint fps_n,

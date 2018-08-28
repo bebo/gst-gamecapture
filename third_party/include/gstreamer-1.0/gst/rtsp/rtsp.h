@@ -22,6 +22,8 @@
 #ifndef __GST_RTSP__H__
 #define __GST_RTSP__H__
 
+#include <gst/rtsp/rtsp-prelude.h>
+
 #include <gst/rtsp/gstrtsp.h>
 #include <gst/rtsp/gstrtspconnection.h>
 #include <gst/rtsp/gstrtspdefs.h>

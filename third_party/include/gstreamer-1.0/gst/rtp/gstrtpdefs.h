@@ -25,6 +25,15 @@
 #define __GST_RTPDEFS_H__
 
 #include <gst/gst.h>
+#include <gst/rtp/rtp-prelude.h>
+
+/**
+ * SECTION:gstrtpdefs
+ * @title: GstRTPdefs
+ * @short_description: common RTP defines
+ *
+ * Provides common defines for the RTP library.
+ */
 
 /**
  * GstRTPProfile:
