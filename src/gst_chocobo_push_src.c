@@ -504,8 +504,8 @@ _draw_texture_callback_no_game_frame(gpointer stuff)
 
   const GstGLFuncs* gl = src->context->gl_vtable;
 
-  // paint black if there's no game frame from the hook
-  gl->ClearColor(0.10f, 0.10f, 0.10f, 0.3f);
+  // paint transparent if there's no game frame from the hook
+  gl->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   gl->Clear(GL_COLOR_BUFFER_BIT);
 
   return TRUE;
