@@ -1,13 +1,14 @@
-a gst plugin
+# gst-gamecapture
 
-this plugin is used to write the data into a shmem, then have bebo-gst-capture picks up from the shmem.
+a gstreamer plugin to capture game frames on windows.
+only tested on windows 10.
 
+# Attributions
+* OBS <https://obsprojects.com> is an amazing open source broadcasting software. We are using its' binaries and some interface codes to capture game frames.
 
-build with Debug / Release, x64
-x64/{Release|Debug} is where the output of the .dll lives, copy the libgstdshowvideosink.dll to C:\gstreamer\1.0\x86_64\lib\gstreamer-1.0
+# License
+The source code provied by Pigs in Flight Inc. is licensed under the MIT license.
 
-to test: 
-```
- gst-launch-1.0 videotestsrc ! video/x-raw,framerate=30/1,width=1280,height=720 ! dshowvideosink
-```
+Different parts of the project are under different licenses depending on their respective origin.
 
+For the full text of the licenses see: LICENSE.TXT
