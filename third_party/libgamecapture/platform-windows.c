@@ -26,8 +26,6 @@
 #include "dstr.h"
 #include "windows/win-version.h"
 
-#include "w32-pthreads/pthread.h"
-
 static bool have_clockfreq = false;
 static LARGE_INTEGER clock_freq;
 static uint32_t winver = 0;
@@ -556,44 +554,6 @@ error:
 	bfree(new_path_utf16);
 	return code;
 }
-
-#if 0 
-BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD reason, LPVOID reserved)
-{
-	switch (reason) {
-
-	case DLL_PROCESS_ATTACH:
-		timeBeginPeriod(1);
-#ifdef PTW32_STATIC_LIB
-		pthread_win32_process_attach_np();
-#endif
-		break;
-
-	case DLL_PROCESS_DETACH:
-		timeEndPeriod(1);
-#ifdef PTW32_STATIC_LIB
-		pthread_win32_process_detach_np();
-#endif
-		break;
-
-	case DLL_THREAD_ATTACH:
-#ifdef PTW32_STATIC_LIB
-		pthread_win32_thread_attach_np();
-#endif
-		break;
-
-	case DLL_THREAD_DETACH:
-#ifdef PTW32_STATIC_LIB
-		pthread_win32_thread_detach_np();
-#endif
-		break;
-	}
-
-	UNUSED_PARAMETER(hinst_dll);
-	UNUSED_PARAMETER(reserved);
-	return true;
-}
-#endif
 
 os_performance_token_t *os_request_high_performance(const char *reason)
 {

@@ -26,9 +26,7 @@
 
 #include "c99defs.h"
 
-#ifdef _MSC_VER
-#include "w32-pthreads/pthread.h"
-#else
+#ifndef _MSC_VER
 #include <errno.h>
 #include <pthread.h>
 #endif
@@ -43,15 +41,6 @@ extern "C" {
 #include "threading-posix.h"
 #endif
 
-/* this may seem strange, but you can't use it unless it's an initializer */
-static inline void pthread_mutex_init_value(pthread_mutex_t *mutex)
-{
-	pthread_mutex_t init_val = PTHREAD_MUTEX_INITIALIZER;
-	if (!mutex)
-		return;
-
-	*mutex = init_val;
-}
 
 enum os_event_type {
 	OS_EVENT_TYPE_AUTO,

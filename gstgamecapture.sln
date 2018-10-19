@@ -8,13 +8,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gstgamecapture", "gstgameca
 		{B305ABA2-57F4-499A-A7B3-4C7866245CDB} = {B305ABA2-57F4-499A-A7B3-4C7866245CDB}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gamecapture", "third_party\libgamecapture\gamecapture.vcxproj", "{B305ABA2-57F4-499A-A7B3-4C7866245CDB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libgamecapture", "third_party\libgamecapture\gamecapture.vcxproj", "{B305ABA2-57F4-499A-A7B3-4C7866245CDB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{10BF8F8F-8B14-485C-89F7-8100D72D5CBB} = {10BF8F8F-8B14-485C-89F7-8100D72D5CBB}
-		{BF4003F1-C313-42E0-A820-ABE031F1254C} = {BF4003F1-C313-42E0-A820-ABE031F1254C}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthread", "third_party\libgamecapture\w32-pthreads\pthread.vcxproj", "{BF4003F1-C313-42E0-A820-ABE031F1254C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ipc-util", "third_party\ipc-util\ipc-util.vcxproj", "{10BF8F8F-8B14-485C-89F7-8100D72D5CBB}"
 EndProject
@@ -62,22 +59,6 @@ Global
 		{B305ABA2-57F4-499A-A7B3-4C7866245CDB}.Release-Static|x64.Build.0 = Release|x64
 		{B305ABA2-57F4-499A-A7B3-4C7866245CDB}.Release-Static|x86.ActiveCfg = Release|Win32
 		{B305ABA2-57F4-499A-A7B3-4C7866245CDB}.Release-Static|x86.Build.0 = Release|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug|x64.ActiveCfg = Debug|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug|x64.Build.0 = Debug|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug|x86.ActiveCfg = Debug|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug|x86.Build.0 = Debug|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug-Static|x64.ActiveCfg = Debug-Static|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug-Static|x64.Build.0 = Debug-Static|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug-Static|x86.ActiveCfg = Debug-Static|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Debug-Static|x86.Build.0 = Debug-Static|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release|x64.ActiveCfg = Release|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release|x64.Build.0 = Release|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release|x86.ActiveCfg = Release|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release|x86.Build.0 = Release|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release-Static|x64.ActiveCfg = Release-Static|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release-Static|x64.Build.0 = Release-Static|x64
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release-Static|x86.ActiveCfg = Release-Static|Win32
-		{BF4003F1-C313-42E0-A820-ABE031F1254C}.Release-Static|x86.Build.0 = Release-Static|Win32
 		{10BF8F8F-8B14-485C-89F7-8100D72D5CBB}.Debug|x64.ActiveCfg = Debug|x64
 		{10BF8F8F-8B14-485C-89F7-8100D72D5CBB}.Debug|x64.Build.0 = Debug|x64
 		{10BF8F8F-8B14-485C-89F7-8100D72D5CBB}.Debug|x86.ActiveCfg = Debug|Win32

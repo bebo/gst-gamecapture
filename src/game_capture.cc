@@ -6,8 +6,6 @@
 #include "game_capture.h"
 
 #include <chrono>
-#include <dshow.h>
-#include <strsafe.h>
 #include <tchar.h>
 #include <windows.h>
 #include <string>
@@ -15,15 +13,11 @@
 #include <ipc-util/pipe.h>
 #include <libyuv/convert_from_argb.h>
 #include <libgamecapture/graphics-hook-info.h>
-#include <libgamecapture/bmem.h>
-#include <libgamecapture/dstr.h>
 #include <libgamecapture/app-helpers.h>
 #include <libgamecapture/platform.h>
-#include <libgamecapture/threading.h>
 #include <libgamecapture/obfuscate.h>
 #include <libgamecapture/nt-stuff.h>
 #include <libgamecapture/inject-library.h>
-#include <libgamecapture/window-helpers.h>
 
 #define STOP_BEING_BAD \
   "This is most likely due to security software" \
