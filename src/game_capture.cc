@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2018 Pigs in Flight, Inc.
+ * Author: Jake Loo <jake@bebo.com>
+ */
+
 #include "game_capture.h"
 
 #include <chrono>
@@ -9,16 +14,16 @@
 #include <dxgi.h>
 #include <ipc-util/pipe.h>
 #include <libyuv/convert_from_argb.h>
-#include "gamecapture/graphics-hook-info.h"
-#include "gamecapture/bmem.h"
-#include "gamecapture/dstr.h"
-#include "gamecapture/app-helpers.h"
-#include "gamecapture/platform.h"
-#include "gamecapture/threading.h"
-#include "gamecapture/obfuscate.h"
-#include "gamecapture/nt-stuff.h"
-#include "gamecapture/inject-library.h"
-#include "gamecapture/window-helpers.h"
+#include <libgamecapture/graphics-hook-info.h>
+#include <libgamecapture/bmem.h>
+#include <libgamecapture/dstr.h>
+#include <libgamecapture/app-helpers.h>
+#include <libgamecapture/platform.h>
+#include <libgamecapture/threading.h>
+#include <libgamecapture/obfuscate.h>
+#include <libgamecapture/nt-stuff.h>
+#include <libgamecapture/inject-library.h>
+#include <libgamecapture/window-helpers.h>
 
 #define STOP_BEING_BAD \
   "This is most likely due to security software" \

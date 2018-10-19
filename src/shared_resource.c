@@ -1,6 +1,12 @@
+/*
+ * Copyright (C) 2018 Pigs in Flight, Inc.
+ * Author: Jake Loo <jake@bebo.com>
+ */
+
 #include "shared_resource.h"
-#include "dxgi/gstdxgidevice.h"
-#include "gst/gl/gstglfuncs.h"
+
+#include <dxgi/gstdxgidevice.h>
+#include <gst/gl/gstglfuncs.h>
 
 /* *INDENT-OFF* */
 static const GLfloat flip_vertices[] = {

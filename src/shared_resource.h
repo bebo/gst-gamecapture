@@ -1,19 +1,22 @@
+/*
+ * Copyright (C) 2018 Pigs in Flight, Inc.
+ * Author: Jake Loo <jake@bebo.com>
+ */
+
 #ifndef CHOCOBO_SHARED_RESOURCE_H_
 #define CHOCOBO_SHARED_RESOURCE_H_
+
 #include <d3d11.h>
 #include <dxgi.h>
-
-
 #include <gst/gst.h>
 #include <gst/gl/gl.h>
-
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <GL/wglext.h>
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 
 GST_EXPORT GstDebugCategory *gst_chocobopushsrc_debug;

@@ -1,18 +1,23 @@
+/*
+ * Copyright (C) 2018 Pigs in Flight, Inc.
+ * Author: Jake Loo <jake@bebo.com>
+ */
+
 #ifndef CHOCOBO_GAME_CAPTURE_H_
 #define CHOCOBO_GAME_CAPTURE_H_
 
 #include <glib.h>
+#include <gst/gst.h>
+#include <ipc-util/pipe.h>
+#include <libgamecapture/window-helpers.h>
+#include <stdint.h>
 #include <tchar.h>
 #include <windows.h>
-#include <stdint.h>
-#include <ipc-util/pipe.h>
-#include "gamecapture/window-helpers.h"
-#include <gst/gst.h>
 
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 #if 1
 GST_EXPORT GstDebugCategory *gst_chocobopushsrc_debug;
