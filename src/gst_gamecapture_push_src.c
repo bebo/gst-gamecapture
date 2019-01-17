@@ -608,7 +608,7 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     gst_object_ref(clock);
     GstClockTime base_time = GST_ELEMENT_CAST(psrc)->base_time;
     GstClockTime running_time = gst_clock_get_time(clock) - base_time;
-    guint time_per_frame = 1000000000 / src->fps;
+    guint time_per_frame = GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000 / GST_VIDEO_INFO_FPS_N(&src->out_info);
     gint sleep_time = time_per_frame + src->last_frame_time - running_time;
     gint sleep_time_ms = sleep_time / 1000000;
     GST_LOG("sleep_time: %d", sleep_time_ms);
