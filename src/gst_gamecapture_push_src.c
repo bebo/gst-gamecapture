@@ -35,9 +35,6 @@ enum
   PROP_INJECT_DLL_PATH,
   PROP_ANTI_CHEAT,
   PROP_LAST,
-  PROP_WIDTH,
-  PROP_HEIGHT,
-  PROP_FPS
 };
 
 static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE("src",
@@ -137,16 +134,6 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
       g_param_spec_boolean ("anti-cheat", "anti-cheat", "path to game capture inject dlls",
         TRUE, G_PARAM_READWRITE)); 
 
-  g_object_class_install_property(gobject_class, PROP_WIDTH,
-    g_param_spec_uint("width", "width", "website to render into video",
-      0, 8000, DEFAULT_WIDTH, G_PARAM_READWRITE));
-  g_object_class_install_property(gobject_class, PROP_HEIGHT,
-    g_param_spec_uint("height", "height", "output video height",
-      1, 8000, DEFAULT_HEIGHT, G_PARAM_READWRITE));
-  g_object_class_install_property(gobject_class, PROP_FPS,
-    g_param_spec_uint("fps", "fps", "output video fps",
-      1, 240, DEFAULT_FPS, G_PARAM_READWRITE));
-
   gst_element_class_set_static_metadata(gstelement_class,
       "Chocobo video src", "Src/Video",
       "Chocobo video renderer",
@@ -166,9 +153,6 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->gc_window_name = g_string_new(NULL);
   src->gc_inject_dll_path = g_string_new(NULL);
   src->gc_anti_cheat = TRUE;
-  src->width = DEFAULT_WIDTH;
-  src->height = DEFAULT_HEIGHT;
-  src->fps = DEFAULT_FPS;
   src->last_frame_time = 0;
 
   /* we operate in time */
@@ -219,24 +203,6 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
       GST_INFO("anti-cheat: %d", src->gc_anti_cheat);
       break;
     }
-  case PROP_WIDTH:
-    {
-      src->width = g_value_get_uint(value);
-      GST_INFO("width: %d", src->width);
-      break;
-    }
-   case PROP_HEIGHT:
-    {
-      src->height = g_value_get_uint(value);
-      GST_INFO("height: %d", src->height);
-      break;
-    }
-    case PROP_FPS:
-    {
-       src->fps = g_value_get_uint(value);
-       GST_INFO("fps: %d", src->fps);
-       break;
-    }
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -270,21 +236,6 @@ gst_chocobopushsrc_get_property(GObject *object, guint prop_id, GValue *value,
         g_value_set_boolean(value, src->gc_anti_cheat);
         break;
       }
-     case PROP_WIDTH:
-      {
-        g_value_set_uint(value, src->width);
-        break;
-      }
-     case PROP_HEIGHT:
-      {
-        g_value_set_uint(value, src->height);
-        break;
-      }
-      case PROP_FPS:
-       {
-         g_value_set_uint(value, src->fps);
-         break;
-       }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
       break;
@@ -311,9 +262,9 @@ static GstCaps *gst_chocobopushsrc_fixate(GstBaseSrc *bsrc, GstCaps *caps)
 
   structure = gst_caps_get_structure (caps, 0);
 
-  gst_structure_fixate_field_nearest_int (structure, "width", src->width);
-  gst_structure_fixate_field_nearest_int (structure, "height", src->height);
-  gst_structure_fixate_field_nearest_fraction (structure, "framerate", src->fps, 1);
+  gst_structure_fixate_field_nearest_int (structure, "width", DEFAULT_WIDTH);
+  gst_structure_fixate_field_nearest_int (structure, "height", DEFAULT_HEIGHT);
+  gst_structure_fixate_field_nearest_fraction (structure, "framerate", DEFAULT_FPS, 1);
 
   caps = GST_BASE_SRC_CLASS (gst_chocobopushsrc_parent_class)->fixate (bsrc, caps);
 
@@ -747,7 +698,7 @@ _gl_context_init_shader(GstChocoboPushSrc *src)
 }
 
 
-static void 
+static void
 _gl_init_fbo(GstGLContext *context, GstChocoboPushSrc *src)
 {
   src->fbo = gst_gl_framebuffer_new_with_default_depth(src->context,
