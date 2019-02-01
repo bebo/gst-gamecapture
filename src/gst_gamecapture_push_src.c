@@ -181,26 +181,22 @@ gst_chocobopushsrc_set_property(GObject *object, guint prop_id,
   case PROP_CLASS_NAME:
     {
       g_string_assign(src->gc_class_name, g_value_get_string(value));
-      GST_INFO("class-name: %s", src->gc_class_name->str);
       break;
     }
   case PROP_WINDOW_NAME:
     {
       g_string_assign(src->gc_window_name, g_value_get_string(value));
-      GST_INFO("window-name: %s", src->gc_window_name->str);
       break;
     }
   case PROP_INJECT_DLL_PATH:
     {
       dll_inject_path = _strdup(g_value_get_string(value));
       g_string_assign(src->gc_inject_dll_path, g_value_get_string(value));
-      GST_INFO("inject-dll-path: %s", dll_inject_path);
       break;
     }
   case PROP_ANTI_CHEAT:
     {
       src->gc_anti_cheat = g_value_get_boolean(value);
-      GST_INFO("anti-cheat: %d", src->gc_anti_cheat);
       break;
     }
   default:
@@ -280,7 +276,7 @@ gst_chocobopushsrc_start(GstBaseSrc *bsrc)
 
   bool s32b = load_graphics_offsets(true);
   bool s64b = load_graphics_offsets(false);
-  GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d", 
+  GST_INFO("load graphics offsets - 32bits: %d, 64bits: %d",
       s32b, s64b);
 
   if (!gst_gl_ensure_element_data (src, &src->display, &src->other_context))
@@ -835,5 +831,5 @@ plugin_init(GstPlugin *plugin)
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     gamecapture,
-    "Chocobo Video Src <3",
-    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+    "Game Capture",
+    plugin_init, VERSION, "MIT", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
