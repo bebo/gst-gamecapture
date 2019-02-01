@@ -1019,19 +1019,24 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 static inline bool init_shmem_capture(struct game_capture *gc)
 {
-  gc->texture_buffers[0] = (uint8_t*)gc->data + gc->shmem_data->tex1_offset;
-  gc->texture_buffers[1] = (uint8_t*)gc->data + gc->shmem_data->tex2_offset;
-  gc->convert_16bit = NULL; //is_16bit_format(gc->global_hook_info->format);
+  if (gc->data && gc->shmem_data) {
+    gc->texture_buffers[0] = (uint8_t*)gc->data + gc->shmem_data->tex1_offset;
+    gc->texture_buffers[1] = (uint8_t*)gc->data + gc->shmem_data->tex2_offset;
+    gc->convert_16bit = NULL; //is_16bit_format(gc->global_hook_info->format);
+  }
+  info("successfully init_shmem_capture");
   return true;
 }
 
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
+  info("successfully init_shtex_capture");
   return true;
 }
 
 static bool start_capture(struct game_capture *gc)
 {
+  info("start_capture: %d", gc->global_hook_info->type);
   if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
     if (!init_shmem_capture(gc)) {
       return false;
