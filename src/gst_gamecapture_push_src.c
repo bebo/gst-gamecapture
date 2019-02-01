@@ -135,9 +135,9 @@ gst_chocobopushsrc_class_init(GstChocoboPushSrcClass *klass)
         TRUE, G_PARAM_READWRITE)); 
 
   gst_element_class_set_static_metadata(gstelement_class,
-      "Chocobo video src", "Src/Video",
-      "Chocobo video renderer",
-      "Jake Loo <dad@bebo.com>");
+      "Game Capture", "Src/Video",
+      "Get frames from a video game",
+      "Jake Loo <jake@bebo.com>");
 
   gst_element_class_add_static_pad_template(gstelement_class, &src_template);
 }
