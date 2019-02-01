@@ -10,7 +10,7 @@
 
 extern struct graphics_offsets offsets32;
 extern struct graphics_offsets offsets64;
-extern char *bebo_find_file(const char *file);
+extern char *find_file_from_dll_path(const char *file);
 
 static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
     const char *str)
@@ -174,7 +174,7 @@ bool load_graphics_offsets(bool is32bit)
 
   dstr_copy(&offset_exe, "get-graphics-offsets");
   dstr_cat(&offset_exe, is32bit ? "32.exe" : "64.exe");
-  offset_exe_path = bebo_find_file(offset_exe.array);
+  offset_exe_path = find_file_from_dll_path(offset_exe.array);
 
   pp = os_process_pipe_create(offset_exe_path, "r");
   if (!pp) {

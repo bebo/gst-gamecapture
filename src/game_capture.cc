@@ -41,9 +41,12 @@ extern "C" {
   struct graphics_offsets offsets32 = { 0 };
   struct graphics_offsets offsets64 = { 0 };
 
-  char *bebo_find_file(const char *file_c) {
-    std::string dll_path(dll_inject_path ?
-        dll_inject_path : "C:\\Program Files (x86)\\Bebo\\bebodlls");
+  char *find_file_from_dll_path(const char *file_c) {
+    if (!dll_inject_path) {
+      dll_inject_path = g_get_current_dir();
+    }
+    std::string dll_path(dll_inject_path);
+
     const char* dll_path_c = dll_path.c_str();
     char* result = (char*) bmalloc(strlen(dll_path_c) + strlen(file_c) + 1);
     wsprintfA(result, "%s\\%s", dll_path_c, file_c);
@@ -514,14 +517,14 @@ static inline bool inject_hook(struct game_capture *gc)
 
   if (gc->process_is_64bit) {
     hook_dll = "graphics-hook64.dll";
-    inject_path = bebo_find_file("inject-helper64.exe");
+    inject_path = find_file_from_dll_path("inject-helper64.exe");
   }
   else {
     hook_dll = "graphics-hook32.dll";
-    inject_path = bebo_find_file("inject-helper32.exe");
+    inject_path = find_file_from_dll_path("inject-helper32.exe");
   }
 
-  hook_path = bebo_find_file(hook_dll);
+  hook_path = find_file_from_dll_path(hook_dll);
 
   info("injecting %s with %s into %s", hook_dll, inject_path, gc->config.executable);
 
