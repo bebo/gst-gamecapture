@@ -83,7 +83,7 @@ static void _gl_init_fbo(GstGLContext *context, GstChocoboPushSrc *src);
 
 
 #define _do_init \
-  GST_DEBUG_CATEGORY_INIT (gst_chocobopushsrc_debug, ELEMENT_NAME, 0, "Chocobo Video");
+  GST_DEBUG_CATEGORY_INIT (gst_chocobopushsrc_debug, ELEMENT_NAME, 0, "Game Capture");
 
 G_DEFINE_TYPE_WITH_CODE(GstChocoboPushSrc, gst_chocobopushsrc, GST_TYPE_PUSH_SRC,
     _do_init);
@@ -832,4 +832,4 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     gamecapture,
     "Game Capture",
-    plugin_init, VERSION, "MIT", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
