@@ -62,6 +62,8 @@ enum capture_mode {
   CAPTURE_MODE_HOTKEY
 };
 
+static void* keep_hook_alive_thread(void* data);
+
 static uint32_t inject_failed_count = 0;
 
 static inline int inject_library(HANDLE process, const wchar_t *dll)
@@ -783,6 +785,11 @@ static bool init_hook(struct game_capture *gc)
   gc->next_window = NULL;
   gc->active = true;
   gc->retrying = 0;
+
+  gc->keep_hook_alive_running = true;
+  gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
+      &keep_hook_alive_thread, gc);
+
   return true;
 }
 
@@ -791,6 +798,11 @@ static void stop_capture(struct game_capture *gc)
 #ifndef MULTICLIENT
   ipc_pipe_server_free(&gc->pipe);
 #endif
+
+  if (gc->keep_hook_alive_thread) {
+    gc->keep_hook_alive_running = false;
+    g_thread_join(gc->keep_hook_alive_thread);
+  }
 
   if (gc->hook_stop) {
 //    SetEvent(gc->hook_stop);
@@ -899,7 +911,7 @@ void set_fps(void **data, uint64_t frame_interval) {
   gc->global_hook_info->frame_interval = frame_interval;
 }
 
-void* game_capture_start(void **data, 
+void* game_capture_start(void **data,
     char* window_class_name_c, char* window_name_c,
     GameCaptureConfig *config, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
@@ -1054,42 +1066,20 @@ gboolean game_capture_tick(void * data) {
     gc->hook_ready = open_event_gc(gc, EVENT_HOOK_READY);
   }
 
-  if (gc->active && gc->hook_stop) {
-    if (WaitForSingleObject(gc->hook_stop, 1) == WAIT_OBJECT_0) {
-      debug("hook stop signal received");
-      enum capture_result result = init_capture_data(gc);
-      gc->capturing = start_capture(gc);
-    }
-    // stop_capture(gc);
-  }
-
-#if 1
-  if (gc->hook_ready && !gc->data) {
-    if (WaitForSingleObject(gc->hook_ready, 30) == WAIT_OBJECT_0) {
-      enum capture_result result = init_capture_data(gc);
-
-      if (result == CAPTURE_SUCCESS)
-        gc->capturing = start_capture(gc);
-      else
-        info("init_capture_data failed");
-    }
-  }
-#else
-  if (gc->hook_ready && object_signalled(gc->hook_ready)) {
-    debug("capture initializing!");
+  if (gc->hook_ready && !gc->data && object_signalled(gc->hook_ready)) {
     enum capture_result result = init_capture_data(gc);
 
-    if (result == CAPTURE_SUCCESS)
+    if (result == CAPTURE_SUCCESS) {
       gc->capturing = start_capture(gc);
-    else
-      info("init_capture_data failed");
+      info("init_capture_data successfully");
+    } else {
+      error("init_capture_data failed: %d", result);
+    }
   }
-#endif
 
   if (gc->active) {
     if (!capture_valid(gc)) {
-      info("capture window no longer exists, "
-          "terminating capture");
+      info("capture window no longer exists, terminating capture");
       stop_capture(gc);
       g_free(gc);
       return FALSE;
@@ -1189,4 +1179,45 @@ gboolean game_capture_shmem_draw_frame(struct game_capture* gc, uint8_t* dst_dat
 
   ReleaseMutex(mutex);
   return TRUE;
+}
+
+static void* keep_hook_alive_thread(void* data) {
+  struct game_capture* gc = (game_capture*) data;
+
+  uint64_t wait_time_ms = 10;
+  while (gc->keep_hook_alive_running) {
+    if (!gc->active) {
+      g_usleep((gulong) wait_time_ms * 100);
+      continue;
+    }
+
+    HANDLE events[3] = {
+      gc->hook_init,
+      gc->hook_restart,
+      gc->hook_stop
+    };
+
+    DWORD event = WaitForMultipleObjects(3,
+        events,
+        FALSE,
+        wait_time_ms);
+
+    enum capture_result capture_result;
+    switch (event) {
+      case WAIT_OBJECT_0:
+        debug("hook init signal received, but gc is still active, sending a hook ready signal.");
+        SetEvent(gc->hook_ready);
+        break;
+      case WAIT_OBJECT_0 + 1:
+        debug("hook restart signal received, but gc is still active");
+        break;
+      case WAIT_OBJECT_0 + 2:
+        debug("hook stop signal received, but gc is still active, restarting capture");
+        capture_result = init_capture_data(gc);
+        gc->capturing = start_capture(gc);
+        break;
+    }
+  }
+
+  return NULL;
 }

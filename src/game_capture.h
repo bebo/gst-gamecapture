@@ -72,6 +72,9 @@ struct game_capture {
   bool                          convert_16bit;
   bool                          is_app;
 
+  bool                          keep_hook_alive_running;
+  GThread                       *keep_hook_alive_thread;
+
   GameCaptureConfig           config;
 
   ipc_pipe_server_t             pipe;
