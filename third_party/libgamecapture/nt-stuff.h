@@ -5,7 +5,7 @@
 #define THREAD_STATE_WAITING 5
 #define THREAD_WAIT_REASON_SUSPENDED 5
 
-typedef struct _SYSTEM_PROCESS_INFORMATION2 {
+typedef struct _SYSTEM_PROCESS_INFORMATION2_ {
     ULONG NextEntryOffset;
     ULONG ThreadCount;
     BYTE Reserved1[48];
@@ -18,9 +18,9 @@ typedef struct _SYSTEM_PROCESS_INFORMATION2 {
     SIZE_T PeakPagefileUsage;
     SIZE_T PrivatePageCount;
     LARGE_INTEGER Reserved6[6];
-} SYSTEM_PROCESS_INFORMATION2;
+} SYSTEM_PROCESS_INFORMATION2_;
 
-typedef struct _SYSTEM_THREAD_INFORMATION {
+typedef struct _SYSTEM_THREAD_INFORMATION_ {
 	FILETIME KernelTime;
 	FILETIME UserTime;
 	FILETIME CreateTime;
@@ -34,7 +34,7 @@ typedef struct _SYSTEM_THREAD_INFORMATION {
 	DWORD ThreadState;
 	DWORD WaitReason;
 	DWORD Reserved1;
-} SYSTEM_THREAD_INFORMATION;
+} SYSTEM_THREAD_INFORMATION_;
 
 #ifndef NT_SUCCESS
 #define NT_SUCCESS(status) ((NTSTATUS)(status) >= 0)
@@ -137,10 +137,10 @@ static bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 		data = malloc(size);
 	}
 
-	SYSTEM_PROCESS_INFORMATION2 *spi = (SYSTEM_PROCESS_INFORMATION2 *) data;
+	SYSTEM_PROCESS_INFORMATION2_ *spi = (SYSTEM_PROCESS_INFORMATION2_ *) data;
 
 	for (;;) {
-		if (spi->UniqueProcessId == (HANDLE)process_id) {
+		if (spi->UniqueProcessId == (HANDLE)(DWORD_PTR)process_id) {
 			break;
 		}
 
@@ -148,15 +148,15 @@ static bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 		if (!offset)
 			goto fail;
 
-		spi = (SYSTEM_PROCESS_INFORMATION2*)((BYTE*)spi + offset);
+		spi = (SYSTEM_PROCESS_INFORMATION2_*)((BYTE*)spi + offset);
 	}
 
-	SYSTEM_THREAD_INFORMATION *sti;
-	SYSTEM_THREAD_INFORMATION *info = NULL;
-	sti = (SYSTEM_THREAD_INFORMATION*)((BYTE*)spi + sizeof(*spi));
+	SYSTEM_THREAD_INFORMATION_ *sti;
+	SYSTEM_THREAD_INFORMATION_ *info = NULL;
+	sti = (SYSTEM_THREAD_INFORMATION_*)((BYTE*)spi + sizeof(*spi));
 
 	for (ULONG i = 0; i < spi->ThreadCount; i++) {
-		if (sti[i].UniqueThreadId == (HANDLE)thread_id) {
+		if (sti[i].UniqueThreadId == (HANDLE)(DWORD_PTR)thread_id) {
 			info = &sti[i];
 			break;
 		}
