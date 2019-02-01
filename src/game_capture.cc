@@ -24,6 +24,8 @@
   "that the Bebo Capture installation folder is excluded/ignored in the " \
   "settings of the security software you are using."
 
+#define MULTICLIENT
+
 #if 1
 #define debug(...) GST_INFO(__VA_ARGS__)
 #define info(...) GST_INFO(__VA_ARGS__)
@@ -615,10 +617,12 @@ static inline bool init_pipe(struct game_capture *gc)
 
   sprintf(name, "%s%lu", PIPE_NAME, gc->process_id);
 
+#ifndef MULTICLIENT
   if (!ipc_pipe_server_start(&gc->pipe, name, pipe_log, gc)) {
     warn("init_pipe: failed to start pipe");
     return false;
   }
+#endif
 
   return true;
 }
@@ -784,10 +788,12 @@ static bool init_hook(struct game_capture *gc)
 
 static void stop_capture(struct game_capture *gc)
 {
+#ifndef MULTICLIENT
   ipc_pipe_server_free(&gc->pipe);
+#endif
 
   if (gc->hook_stop) {
-    SetEvent(gc->hook_stop);
+//    SetEvent(gc->hook_stop);
   }
 
   if (gc->global_hook_info) {
@@ -1048,6 +1054,27 @@ gboolean game_capture_tick(void * data) {
     gc->hook_ready = open_event_gc(gc, EVENT_HOOK_READY);
   }
 
+  if (gc->active && gc->hook_stop) {
+    if (WaitForSingleObject(gc->hook_stop, 1) == WAIT_OBJECT_0) {
+      debug("hook stop signal received");
+      enum capture_result result = init_capture_data(gc);
+      gc->capturing = start_capture(gc);
+    }
+    // stop_capture(gc);
+  }
+
+#if 1
+  if (gc->hook_ready && !gc->data) {
+    if (WaitForSingleObject(gc->hook_ready, 30) == WAIT_OBJECT_0) {
+      enum capture_result result = init_capture_data(gc);
+
+      if (result == CAPTURE_SUCCESS)
+        gc->capturing = start_capture(gc);
+      else
+        info("init_capture_data failed");
+    }
+  }
+#else
   if (gc->hook_ready && object_signalled(gc->hook_ready)) {
     debug("capture initializing!");
     enum capture_result result = init_capture_data(gc);
@@ -1057,6 +1084,7 @@ gboolean game_capture_tick(void * data) {
     else
       info("init_capture_data failed");
   }
+#endif
 
   if (gc->active) {
     if (!capture_valid(gc)) {
