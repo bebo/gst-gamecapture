@@ -63,6 +63,7 @@ enum capture_mode {
 };
 
 static void* keep_hook_alive_thread(void* data);
+static void* keep_hook_ready_alive_thread(void* data);
 
 static uint32_t inject_failed_count = 0;
 
@@ -786,6 +787,14 @@ static bool init_hook(struct game_capture *gc)
   gc->active = true;
   gc->retrying = 0;
 
+  if (!gc->keep_hook_ready_alive_running) {
+    info("Spawning keep_hook_ready_alive thread");
+    gc->keep_hook_ready_alive_running = true;
+    gc->keep_hook_ready_alive_thread = g_thread_new(
+        "keep_hook_ready_alive_thread",
+        &keep_hook_ready_alive_thread, gc);
+  }
+
   return true;
 }
 
@@ -798,6 +807,11 @@ static void stop_capture(struct game_capture *gc)
   if (gc->keep_hook_alive_thread) {
     gc->keep_hook_alive_running = false;
     g_thread_join(gc->keep_hook_alive_thread);
+  }
+
+  if (gc->keep_hook_ready_alive_thread) {
+    gc->keep_hook_ready_alive_running = false;
+    g_thread_join(gc->keep_hook_ready_alive_thread);
   }
 
   if (gc->hook_stop) {
@@ -822,6 +836,7 @@ static void stop_capture(struct game_capture *gc)
   close_handle(&gc->hook_restart);
   close_handle(&gc->hook_stop);
   close_handle(&gc->hook_ready);
+  close_handle(&gc->hook_ready_own);
   close_handle(&gc->hook_exit);
   close_handle(&gc->hook_init);
   close_handle(&gc->hook_data_map);
@@ -830,6 +845,7 @@ static void stop_capture(struct game_capture *gc)
   close_handle(&gc->target_process);
   close_handle(&gc->texture_mutexes[0]);
   close_handle(&gc->texture_mutexes[1]);
+  g_atomic_pointer_set(&gc->last_map_id, 0);
 
   if (gc->active) {
     info("game capture stopped");
@@ -1046,6 +1062,15 @@ static bool start_capture(struct game_capture *gc)
     }
   }
 
+  g_atomic_pointer_set(&gc->last_map_id, gc->global_hook_info->map_id);
+
+  if (!gc->keep_hook_alive_running) {
+    info("Spawning keep_hook_alive thread");
+    gc->keep_hook_alive_running = true;
+    gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
+        &keep_hook_alive_thread, gc);
+  }
+
   return true;
 }
 
@@ -1066,32 +1091,30 @@ gboolean game_capture_tick(void * data) {
 
   gc->frame_tick += 1;
 
+  if (gc->active && !gc->hook_ready_own && gc->process_id) {
+    wchar_t new_name[64];
+    _snwprintf(new_name, 64, L"%s%lu", L"HOOK_READY_OWN", gc->process_id);
+    gc->hook_ready_own = create_event(new_name);
+  }
+
   if (gc->active && !gc->hook_ready && gc->process_id) {
     debug("re-subscribing to hook_ready");
     gc->hook_ready = open_event_gc(gc, EVENT_HOOK_READY);
   }
 
-  if (!gc->data) {
-    uint64_t fps = get_fps(gc);
-    if (gc->hook_ready && object_signalled(gc->hook_ready)) {
-      info("Received hook_ready signal, starting capture.");
-      enum capture_result result = init_capture_data(gc);
+  uint64_t fps = get_fps(gc);
+  if (gc->hook_ready_own && object_signalled(gc->hook_ready_own)) {
+    info("Received hook_ready signal, starting capture.");
+    enum capture_result result = init_capture_data(gc);
 
-      if (result == CAPTURE_SUCCESS) {
-        gc->capturing = start_capture(gc);
-        info("init_capture_data successfully");
-
-        if (!gc->keep_hook_alive_running) {
-          info("Spawning keep_hook_alive thread");
-          gc->keep_hook_alive_running = true;
-          gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
-              &keep_hook_alive_thread, gc);
-        }
-      } else {
-        error("init_capture_data failed: %d", result);
-      }
+    if (result == CAPTURE_SUCCESS) {
+      gc->capturing = start_capture(gc);
+      info("init_capture_data successfully");
     } else {
-      // every 2seconds
+      error("init_capture_data failed: %d", result);
+    }
+  } /*else {
+    if (!gc->data) {
       uint64_t rehook_wait_time_seconds = 3;
       if (gc->frame_tick % (fps * rehook_wait_time_seconds) == 0) {
         debug("Looks like we've failed to get frames for awhile, fps: %llu", fps);
@@ -1103,7 +1126,7 @@ gboolean game_capture_tick(void * data) {
         }
       }
     }
-  }
+  }*/
 
   if (gc->active) {
     if (!capture_valid(gc)) {
@@ -1212,7 +1235,7 @@ gboolean game_capture_shmem_draw_frame(struct game_capture* gc, uint8_t* dst_dat
 static void* keep_hook_alive_thread(void* data) {
   struct game_capture* gc = (game_capture*) data;
 
-  uint64_t wait_time_ms = 10;
+  uint64_t wait_time_ms = 0;
   while (gc->keep_hook_alive_running) {
     if (!gc->active) {
       g_usleep((gulong) wait_time_ms * 100);
@@ -1232,7 +1255,13 @@ static void* keep_hook_alive_thread(void* data) {
     switch (event) {
       case WAIT_OBJECT_0:
         info("hook init signal received, but gc is still active, sending a hook ready signal.");
-        SetEvent(gc->hook_ready);
+        SetEvent(gc->hook_stop);
+        SetEvent(gc->hook_restart);
+        SetEvent(gc->hook_init);
+        g_usleep((gulong) 300 * 1000);  // other application has 300ms to takes it off our hand.
+        ResetEvent(gc->hook_init);
+        ResetEvent(gc->hook_restart);
+        ResetEvent(gc->hook_ready);
         break;
       case WAIT_OBJECT_0 + 1:
         info("hook stop signal received, but gc is still active.");
@@ -1240,6 +1269,28 @@ static void* keep_hook_alive_thread(void* data) {
     }
   }
 
-  info("Stopping down keep hook alive thread");
+  info("Shutting down keep hook alive thread");
+  return NULL;
+}
+
+static void* keep_hook_ready_alive_thread(void* data) {
+  struct game_capture* gc = (game_capture*) data;
+
+  uint64_t wait_time_ms = 1000;
+  while (gc->keep_hook_ready_alive_running) {
+    if (gc->active) {
+      if (gc->global_hook_info) {
+        uint32_t last_map_id = (uint32_t) g_atomic_pointer_get(&gc->last_map_id);
+        if (last_map_id != gc->global_hook_info->map_id) {
+          info("global_hook_info map_id changed. renderer map_id: %lu, current map_id: %lu",
+              last_map_id, gc->global_hook_info->map_id);
+          SetEvent(gc->hook_ready_own);
+        }
+      }
+    }
+    g_usleep((gulong) wait_time_ms * 1000);
+  }
+
+  info("Shutting down keep hook ready alive thread");
   return NULL;
 }

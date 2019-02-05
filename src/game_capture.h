@@ -91,7 +91,11 @@ struct game_capture {
 
   bool                          keep_hook_alive_running;
   GThread                       *keep_hook_alive_thread;
+  bool                          keep_hook_ready_alive_running;
+  GThread                       *keep_hook_ready_alive_thread;
   uint64_t                      frame_tick;
+  HANDLE                        hook_ready_own;
+  volatile void*                last_map_id;
 
   union {
     struct {
