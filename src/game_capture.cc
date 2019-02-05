@@ -786,10 +786,6 @@ static bool init_hook(struct game_capture *gc)
   gc->active = true;
   gc->retrying = 0;
 
-  gc->keep_hook_alive_running = true;
-  gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
-      &keep_hook_alive_thread, gc);
-
   return true;
 }
 
@@ -903,12 +899,16 @@ void set_fps(void **data, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
 
   if (gc == NULL) {
-    debug("set_fps: gc==NULL");
     return;
   }
 
   debug("set_fps: %d", frame_interval);
   gc->global_hook_info->frame_interval = frame_interval;
+}
+
+uint64_t get_fps(void *data) {
+  struct game_capture *gc = (game_capture *)data;
+  return 1000000000ULL / (gc->frame_interval * 2);
 }
 
 void* game_capture_start(void **data,
@@ -1019,11 +1019,9 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 static inline bool init_shmem_capture(struct game_capture *gc)
 {
-  if (gc->data && gc->shmem_data) {
-    gc->texture_buffers[0] = (uint8_t*)gc->data + gc->shmem_data->tex1_offset;
-    gc->texture_buffers[1] = (uint8_t*)gc->data + gc->shmem_data->tex2_offset;
-    gc->convert_16bit = NULL; //is_16bit_format(gc->global_hook_info->format);
-  }
+  gc->texture_buffers[0] = (uint8_t*)gc->data + gc->shmem_data->tex1_offset;
+  gc->texture_buffers[1] = (uint8_t*)gc->data + gc->shmem_data->tex2_offset;
+  gc->convert_16bit = NULL; //is_16bit_format(gc->global_hook_info->format);
   info("successfully init_shmem_capture");
   return true;
 }
@@ -1036,7 +1034,7 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 
 static bool start_capture(struct game_capture *gc)
 {
-  info("start_capture: %d", gc->global_hook_info->type);
+  info("Initializing capture with type: %d", gc->global_hook_info->type);
   if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
     if (!init_shmem_capture(gc)) {
       return false;
@@ -1066,19 +1064,44 @@ gboolean game_capture_tick(void * data) {
     return FALSE;
   }
 
+  gc->frame_tick += 1;
+
   if (gc->active && !gc->hook_ready && gc->process_id) {
     debug("re-subscribing to hook_ready");
     gc->hook_ready = open_event_gc(gc, EVENT_HOOK_READY);
   }
 
-  if (gc->hook_ready && !gc->data && object_signalled(gc->hook_ready)) {
-    enum capture_result result = init_capture_data(gc);
+  if (!gc->data) {
+    uint64_t fps = get_fps(gc);
+    if (gc->hook_ready && object_signalled(gc->hook_ready)) {
+      info("Received hook_ready signal, starting capture.");
+      enum capture_result result = init_capture_data(gc);
 
-    if (result == CAPTURE_SUCCESS) {
-      gc->capturing = start_capture(gc);
-      info("init_capture_data successfully");
+      if (result == CAPTURE_SUCCESS) {
+        gc->capturing = start_capture(gc);
+        info("init_capture_data successfully");
+
+        if (!gc->keep_hook_alive_running) {
+          info("Spawning keep_hook_alive thread");
+          gc->keep_hook_alive_running = true;
+          gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
+              &keep_hook_alive_thread, gc);
+        }
+      } else {
+        error("init_capture_data failed: %d", result);
+      }
     } else {
-      error("init_capture_data failed: %d", result);
+      // every 2seconds
+      uint64_t rehook_wait_time_seconds = 3;
+      if (gc->frame_tick % (fps * rehook_wait_time_seconds) == 0) {
+        debug("Looks like we've failed to get frames for awhile, fps: %llu", fps);
+        if (gc->hook_restart && gc->hook_init && gc->hook_stop) {
+          info("Restarting hooks. Signaling Stop -> Restart -> Init.");
+          SetEvent(gc->hook_stop);
+          SetEvent(gc->hook_restart);
+          SetEvent(gc->hook_init);
+        }
+      }
     }
   }
 
@@ -1196,33 +1219,27 @@ static void* keep_hook_alive_thread(void* data) {
       continue;
     }
 
-    HANDLE events[3] = {
+    HANDLE events[2] = {
       gc->hook_init,
-      gc->hook_restart,
       gc->hook_stop
     };
 
-    DWORD event = WaitForMultipleObjects(3,
+    DWORD event = WaitForMultipleObjects(2,
         events,
         FALSE,
-        wait_time_ms);
+        (DWORD) wait_time_ms);
 
-    enum capture_result capture_result;
     switch (event) {
       case WAIT_OBJECT_0:
-        debug("hook init signal received, but gc is still active, sending a hook ready signal.");
+        info("hook init signal received, but gc is still active, sending a hook ready signal.");
         SetEvent(gc->hook_ready);
         break;
       case WAIT_OBJECT_0 + 1:
-        debug("hook restart signal received, but gc is still active");
-        break;
-      case WAIT_OBJECT_0 + 2:
-        debug("hook stop signal received, but gc is still active, restarting capture");
-        capture_result = init_capture_data(gc);
-        gc->capturing = start_capture(gc);
+        info("hook stop signal received, but gc is still active.");
         break;
     }
   }
 
+  info("Stopping down keep hook alive thread");
   return NULL;
 }
