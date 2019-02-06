@@ -1220,7 +1220,7 @@ gboolean game_capture_shmem_draw_frame(struct game_capture* gc, uint8_t* dst_dat
 static void* keep_hook_alive_thread(void* data) {
   struct game_capture* gc = (game_capture*) data;
 
-  uint64_t wait_time_ms = 0;
+  uint64_t wait_time_ms = 1;
   while (g_atomic_int_get(&gc->keep_hook_alive_running) != 0) {
     if (!gc->active) {
       g_usleep((gulong) wait_time_ms * 100);
