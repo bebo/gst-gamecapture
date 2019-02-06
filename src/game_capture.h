@@ -72,7 +72,7 @@ struct game_capture {
   bool                          convert_16bit;
   bool                          is_app;
 
-  GameCaptureConfig           config;
+  GameCaptureConfig             config;
 
   ipc_pipe_server_t             pipe;
   struct hook_info              *global_hook_info;
@@ -88,6 +88,14 @@ struct game_capture {
   HANDLE                        texture_mutexes[2];
   wchar_t                       *app_sid;
   int                           retrying;
+
+  volatile gint                 keep_hook_alive_running;
+  GThread                       *keep_hook_alive_thread;
+  volatile gint                 keep_hook_ready_alive_running;
+  GThread                       *keep_hook_ready_alive_thread;
+  uint64_t                      frame_tick;
+  HANDLE                        hook_ready_own;
+  volatile void*                last_map_id;
 
   union {
     struct {
@@ -109,6 +117,7 @@ void* game_capture_start(void **data,
 gboolean game_capture_tick(void * data);
 gboolean game_capture_stop(void * data);
 void set_fps(void **data, uint64_t frame_interval);
+uint64_t get_fps(void *data);
 
 wchar_t *get_wc(const char *c);
 #ifdef __cplusplus

@@ -24,6 +24,8 @@
   "that the Bebo Capture installation folder is excluded/ignored in the " \
   "settings of the security software you are using."
 
+#define MULTICLIENT
+
 #if 1
 #define debug(...) GST_INFO(__VA_ARGS__)
 #define info(...) GST_INFO(__VA_ARGS__)
@@ -59,6 +61,9 @@ enum capture_mode {
   CAPTURE_MODE_WINDOW,
   CAPTURE_MODE_HOTKEY
 };
+
+static void* keep_hook_alive_thread(void* data);
+static void* keep_hook_ready_alive_thread(void* data);
 
 static uint32_t inject_failed_count = 0;
 
@@ -151,7 +156,7 @@ static struct game_capture *game_capture_create(GameCaptureConfig *config, uint6
   gc->wait_for_target_startup = false;
   gc->next_retry_time_ns = 0;
   gc->window = config->window;
-
+  gc->frame_tick = 0;
   return gc;
 }
 
@@ -261,8 +266,7 @@ static void get_fullscreen_window(struct game_capture *gc)
       rect.bottom == mi.rcMonitor.bottom &&
       rect.top == mi.rcMonitor.top) {
     setup_window(gc, window);
-  }
-  else {
+  } else {
     gc->wait_for_target_startup = true;
   }
 }
@@ -275,8 +279,7 @@ static void get_selected_window(struct game_capture *gc)
     wchar_t class_w[512];
     os_utf8_to_wcs(gc->klass.array, 0, class_w, 512);
     window = FindWindowW(class_w, NULL);
-  }
-  else {
+  } else {
     window = find_window(INCLUDE_MINIMIZED,
         gc->priority,
         gc->klass.array,
@@ -286,8 +289,7 @@ static void get_selected_window(struct game_capture *gc)
 
   if (window) {
     setup_window(gc, window);
-  }
-  else {
+  } else {
     gc->wait_for_target_startup = true;
   }
 }
@@ -615,10 +617,12 @@ static inline bool init_pipe(struct game_capture *gc)
 
   sprintf(name, "%s%lu", PIPE_NAME, gc->process_id);
 
+#ifndef MULTICLIENT
   if (!ipc_pipe_server_start(&gc->pipe, name, pipe_log, gc)) {
     warn("init_pipe: failed to start pipe");
     return false;
   }
+#endif
 
   return true;
 }
@@ -779,15 +783,36 @@ static bool init_hook(struct game_capture *gc)
   gc->next_window = NULL;
   gc->active = true;
   gc->retrying = 0;
+
+  if (g_atomic_int_get(&gc->keep_hook_ready_alive_running) == 0) {
+    info("Spawning keep_hook_ready_alive thread");
+    g_atomic_int_set(&gc->keep_hook_ready_alive_running, 1);
+    gc->keep_hook_ready_alive_thread = g_thread_new(
+        "keep_hook_ready_alive_thread",
+        &keep_hook_ready_alive_thread, gc);
+  }
+
   return true;
 }
 
 static void stop_capture(struct game_capture *gc)
 {
+#ifndef MULTICLIENT
   ipc_pipe_server_free(&gc->pipe);
+#endif
+
+  if (gc->keep_hook_alive_thread) {
+    g_atomic_int_set(&gc->keep_hook_alive_running, 0);
+    g_thread_join(gc->keep_hook_alive_thread);
+  }
+
+  if (gc->keep_hook_ready_alive_thread) {
+    g_atomic_int_set(&gc->keep_hook_ready_alive_running, 0);
+    g_thread_join(gc->keep_hook_ready_alive_thread);
+  }
 
   if (gc->hook_stop) {
-    SetEvent(gc->hook_stop);
+//    SetEvent(gc->hook_stop);
   }
 
   if (gc->global_hook_info) {
@@ -808,6 +833,7 @@ static void stop_capture(struct game_capture *gc)
   close_handle(&gc->hook_restart);
   close_handle(&gc->hook_stop);
   close_handle(&gc->hook_ready);
+  close_handle(&gc->hook_ready_own);
   close_handle(&gc->hook_exit);
   close_handle(&gc->hook_init);
   close_handle(&gc->hook_data_map);
@@ -816,6 +842,7 @@ static void stop_capture(struct game_capture *gc)
   close_handle(&gc->target_process);
   close_handle(&gc->texture_mutexes[0]);
   close_handle(&gc->texture_mutexes[1]);
+  g_atomic_pointer_set(&gc->last_map_id, 0);
 
   if (gc->active) {
     info("game capture stopped");
@@ -885,7 +912,6 @@ void set_fps(void **data, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
 
   if (gc == NULL) {
-    debug("set_fps: gc==NULL");
     return;
   }
 
@@ -893,7 +919,12 @@ void set_fps(void **data, uint64_t frame_interval) {
   gc->global_hook_info->frame_interval = frame_interval;
 }
 
-void* game_capture_start(void **data, 
+uint64_t get_fps(void *data) {
+  struct game_capture *gc = (game_capture *)data;
+  return 1000000000ULL / (gc->frame_interval * 2);
+}
+
+void* game_capture_start(void **data,
     char* window_class_name_c, char* window_name_c,
     GameCaptureConfig *config, uint64_t frame_interval) {
   struct game_capture *gc = (game_capture *)*data;
@@ -1004,16 +1035,19 @@ static inline bool init_shmem_capture(struct game_capture *gc)
   gc->texture_buffers[0] = (uint8_t*)gc->data + gc->shmem_data->tex1_offset;
   gc->texture_buffers[1] = (uint8_t*)gc->data + gc->shmem_data->tex2_offset;
   gc->convert_16bit = NULL; //is_16bit_format(gc->global_hook_info->format);
+  info("successfully init_shmem_capture");
   return true;
 }
 
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
+  info("successfully init_shtex_capture");
   return true;
 }
 
 static bool start_capture(struct game_capture *gc)
 {
+  info("Initializing capture with type: %d", gc->global_hook_info->type);
   if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
     if (!init_shmem_capture(gc)) {
       return false;
@@ -1023,6 +1057,16 @@ static bool start_capture(struct game_capture *gc)
     if (!init_shtex_capture(gc)) {
       return false;
     }
+  }
+
+  g_atomic_pointer_set(&gc->last_map_id,
+      static_cast<uint64_t>(gc->global_hook_info->map_id));
+
+  if (g_atomic_int_get(&gc->keep_hook_alive_running) == 0) {
+    info("Spawning keep_hook_alive thread");
+    g_atomic_int_set(&gc->keep_hook_alive_running, 1);
+    gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
+        &keep_hook_alive_thread, gc);
   }
 
   return true;
@@ -1043,25 +1087,35 @@ gboolean game_capture_tick(void * data) {
     return FALSE;
   }
 
+  gc->frame_tick += 1;
+
+  if (gc->active && !gc->hook_ready_own && gc->process_id) {
+    wchar_t new_name[64];
+    _snwprintf(new_name, 64, L"%s%lu", L"HOOK_READY_OWN", gc->process_id);
+    gc->hook_ready_own = create_event(new_name);
+  }
+
   if (gc->active && !gc->hook_ready && gc->process_id) {
     debug("re-subscribing to hook_ready");
     gc->hook_ready = open_event_gc(gc, EVENT_HOOK_READY);
   }
 
-  if (gc->hook_ready && object_signalled(gc->hook_ready)) {
-    debug("capture initializing!");
+  uint64_t fps = get_fps(gc);
+  if (gc->hook_ready_own && object_signalled(gc->hook_ready_own)) {
+    info("Received hook_ready signal, starting capture.");
     enum capture_result result = init_capture_data(gc);
 
-    if (result == CAPTURE_SUCCESS)
+    if (result == CAPTURE_SUCCESS) {
       gc->capturing = start_capture(gc);
-    else
-      info("init_capture_data failed");
+      info("init_capture_data successfully");
+    } else {
+      error("init_capture_data failed: %d", result);
+    }
   }
 
   if (gc->active) {
     if (!capture_valid(gc)) {
-      info("capture window no longer exists, "
-          "terminating capture");
+      info("capture window no longer exists, terminating capture");
       stop_capture(gc);
       g_free(gc);
       return FALSE;
@@ -1161,4 +1215,67 @@ gboolean game_capture_shmem_draw_frame(struct game_capture* gc, uint8_t* dst_dat
 
   ReleaseMutex(mutex);
   return TRUE;
+}
+
+static void* keep_hook_alive_thread(void* data) {
+  struct game_capture* gc = (game_capture*) data;
+
+  uint64_t wait_time_ms = 0;
+  while (g_atomic_int_get(&gc->keep_hook_alive_running) != 0) {
+    if (!gc->active) {
+      g_usleep((gulong) wait_time_ms * 100);
+      continue;
+    }
+
+    HANDLE events[2] = {
+      gc->hook_init,
+      gc->hook_stop
+    };
+
+    DWORD event = WaitForMultipleObjects(2,
+        events,
+        FALSE,
+        (DWORD) wait_time_ms);
+
+    switch (event) {
+      case WAIT_OBJECT_0:
+        info("hook init signal received, but gc is still active, sending a hook ready signal.");
+        SetEvent(gc->hook_stop);
+        SetEvent(gc->hook_restart);
+        SetEvent(gc->hook_init);
+        g_usleep((gulong) 300 * 1000);  // other application has 300ms to takes it off our hand.
+        ResetEvent(gc->hook_init);
+        ResetEvent(gc->hook_restart);
+        ResetEvent(gc->hook_ready);
+        break;
+      case WAIT_OBJECT_0 + 1:
+        info("hook stop signal received, but gc is still active.");
+        break;
+    }
+  }
+
+  info("Shutting down keep hook alive thread");
+  return NULL;
+}
+
+static void* keep_hook_ready_alive_thread(void* data) {
+  struct game_capture* gc = (game_capture*) data;
+
+  uint64_t wait_time_ms = 1000;
+  while (g_atomic_int_get(&gc->keep_hook_ready_alive_running) != 0) {
+    if (gc->active) {
+      if (gc->global_hook_info) {
+        uint64_t last_map_id = (uint64_t) g_atomic_pointer_get(&gc->last_map_id);
+        if (last_map_id != gc->global_hook_info->map_id) {
+          info("global_hook_info map_id changed. renderer map_id: %lu, current map_id: %lu",
+              last_map_id, gc->global_hook_info->map_id);
+          SetEvent(gc->hook_ready_own);
+        }
+      }
+    }
+    g_usleep((gulong) wait_time_ms * 1000);
+  }
+
+  info("Shutting down keep hook ready alive thread");
+  return NULL;
 }

@@ -553,9 +553,9 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   src->out_tex = (GstGLMemory *) out_frame.map[0].memory;
 
   if (!game_capture_is_ready(src->game_context)) {
-    src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
-    src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
-    src->game_capture_config->force_scaling = 1;
+    // src->game_capture_config->scale_cx = GST_VIDEO_INFO_WIDTH(&src->out_info);
+    // src->game_capture_config->scale_cy = GST_VIDEO_INFO_HEIGHT(&src->out_info);
+    // src->game_capture_config->force_scaling = 1;
     src->game_capture_config->anticheat_hook = src->gc_anti_cheat;
 
     uint64_t frame_interval = (GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000ULL /
@@ -607,9 +607,6 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     guint time_per_frame = GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000 / GST_VIDEO_INFO_FPS_N(&src->out_info);
     gint sleep_time = time_per_frame + src->last_frame_time - running_time;
     gint sleep_time_ms = sleep_time / 1000000;
-    GST_LOG("sleep_time: %d", sleep_time_ms);
-    GST_LOG("running_time: %d", running_time / 1000000);
-
     if (sleep_time > 0) {
       Sleep(sleep_time_ms);
     }
