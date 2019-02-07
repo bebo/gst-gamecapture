@@ -108,13 +108,14 @@ static void init_display_shader(SharedResource* resource, GstGLContext* gl_conte
   gl->BindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
-static gboolean init_d3d_context(GstGLContext * gl_context, SharedResource* resource, HANDLE shtex_handle) {
-
+static HRESULT init_d3d_context(GstGLContext * gl_context,
+    SharedResource* resource, HANDLE shtex_handle) {
   GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
   if (!ctx) {
     GST_ERROR("missing shared context");
-    return FALSE;
+    return E_FAIL;
   }
+
   resource->gl_device_handle = ctx->device_interop_handle;
 
   HRESULT hr = (ctx->d3d11_device)->lpVtbl->OpenSharedResource(
@@ -123,7 +124,12 @@ static gboolean init_d3d_context(GstGLContext * gl_context, SharedResource* reso
       &IID_ID3D11Texture2D,
       (void**)&resource->d3d_texture);
 
-  return (hr == S_OK);
+  if (FAILED(hr)) {
+    GST_ERROR("Failed to OpenSharedResource, handle: %lu, error: 0x%08x", shtex_handle, hr);
+    return hr;
+  }
+
+  return S_OK;
 }
 
 static void create_gl_texture(SharedResource* resource, GstGLContext* gl_context) {
@@ -197,7 +203,7 @@ shared_resource_draw_frame(SharedResource* resource, GstGLContext* gl_context) {
   _unbind_buffer (resource, gl);
 }
 
-gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
+glong init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle,
     void** resource_out, gboolean flip) {
   SharedResource* resource = g_new0(SharedResource, 1);
   resource->draw_frame = shared_resource_draw_frame;
@@ -206,15 +212,16 @@ gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle,
 
   GstDXGID3D11Context * ctx = get_dxgi_share_context(gl_context);
 
-  if (!init_d3d_context(gl_context, resource, shtex_handle)) {
+  HRESULT result = init_d3d_context(gl_context, resource, shtex_handle);
+  if (result != S_OK) {
     free_shared_resource(gl_context, resource);
-    return FALSE;
+    return result;
   }
 
   create_gl_texture(resource, gl_context);
 
   *resource_out = resource;
-  return TRUE;
+  return S_OK;
 }
 
 // must be called on gl thread

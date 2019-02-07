@@ -154,6 +154,8 @@ gst_chocobopushsrc_init(GstChocoboPushSrc *src)
   src->gc_inject_dll_path = g_string_new(NULL);
   src->gc_anti_cheat = TRUE;
   src->last_frame_time = 0;
+  src->is_error = FALSE;
+  src->last_error = 0;
 
   /* we operate in time */
   gst_base_src_set_format (GST_BASE_SRC (src), GST_FORMAT_TIME);
@@ -483,13 +485,19 @@ _gl_shared_texture_capture(GstGLContext *context, GstChocoboPushSrc *src)
 
   if (src->shtex_handle != gc_shtex_handle) {
     src->shtex_handle = gc_shtex_handle;
-    gst_chocobopushsrc_ensure_gl_context(src);
-    if (!init_shared_resource(src->context,
+
+    glong result = init_shared_resource(src->context,
           gc_shtex_handle,
           &src->shared_resource,
-          gc->global_hook_info->flip)) {
-      src->shtex_handle = NULL;
+          gc->global_hook_info->flip);
+
+    // S_OK = 0
+    if (result != 0) {
+      GST_ERROR("Failed to init_shared_resource: 0x%08x", result);
+      src->shtex_handle = 0;
       src->got_frame = FALSE;
+      src->is_error = TRUE;
+      src->last_error = result;
       return;
     }
   }
@@ -540,7 +548,6 @@ static GstFlowReturn
 gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
 {
   GstChocoboPushSrc *src = GST_CHOCOBO(psrc);
-  GstClockTime next_time;
   GstVideoFrame out_frame;
   GstGLSyncMeta *sync_meta;
 
@@ -576,10 +583,20 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
   if (game_capture_is_active(src->game_context)) {
     if (game_capture_tick(src->game_context)) {
       struct game_capture *gc = (struct game_capture*) src->game_context;
+
       if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
         shared_memory_capture(src);
       } else {
-        shared_texture_capture(src);
+        if (!src->is_error) {
+          shared_texture_capture(src);
+        } else {
+          if (src->last_error == 0x80070057) {
+            game_capture_capture_reset(gc);
+          }
+
+          src->last_error = 0;
+          src->is_error = FALSE;
+        }
       }
     } else {
       src->game_context = NULL;
@@ -604,11 +621,12 @@ gst_chocobopushsrc_fill(GstPushSrc *psrc, GstBuffer *buffer)
     gst_object_ref(clock);
     GstClockTime base_time = GST_ELEMENT_CAST(psrc)->base_time;
     GstClockTime running_time = gst_clock_get_time(clock) - base_time;
-    guint time_per_frame = GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000 / GST_VIDEO_INFO_FPS_N(&src->out_info);
-    gint sleep_time = time_per_frame + src->last_frame_time - running_time;
-    gint sleep_time_ms = sleep_time / 1000000;
+    gint64 time_per_frame = GST_VIDEO_INFO_FPS_D(&src->out_info) * 1000000000 /
+      GST_VIDEO_INFO_FPS_N(&src->out_info);
+    gint64 sleep_time = time_per_frame + src->last_frame_time - running_time;
+    gint64 sleep_time_ms = sleep_time / 1000000;
     if (sleep_time > 0) {
-      Sleep(sleep_time_ms);
+      g_usleep((gulong) (sleep_time_ms * 1000));
     }
     src->last_frame_time = gst_clock_get_time(clock) - GST_ELEMENT_CAST(psrc)->base_time;
     gst_object_unref(clock);
@@ -703,7 +721,8 @@ _gl_init_fbo(GstGLContext *context, GstChocoboPushSrc *src)
 static gboolean
 gst_chocobopushsrc_ensure_gl_context(GstChocoboPushSrc * self)
 {
-    return gst_dxgi_device_ensure_gl_context(self, &self->context, &self->other_context, &self->display);
+  return gst_dxgi_device_ensure_gl_context(GST_ELEMENT(self), &self->context,
+      &self->other_context, &self->display);
 }
 
 static gboolean
@@ -739,14 +758,12 @@ gst_chocobopushsrc_decide_allocation(GstBaseSrc *bsrc, GstQuery *query)
 
   if (gst_query_get_n_allocation_pools (query) > 0) {
     gst_query_parse_nth_allocation_pool (query, 0, &pool, &size, &min, &max);
-
     update_pool = TRUE;
   } else {
     GstVideoInfo vinfo;
-
     gst_video_info_init (&vinfo);
     gst_video_info_from_caps (&vinfo, caps);
-    size = vinfo.size;
+    size = (guint) vinfo.size;
     min = max = 5;
     update_pool = FALSE;
   }

@@ -41,7 +41,7 @@ struct _SharedResource {
   void (*draw_frame)(SharedResource* resource, GstGLContext* gl_context);
 };
 
-gboolean init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle, 
+glong init_shared_resource(GstGLContext* gl_context, HANDLE shtex_handle,
     void** resource, gboolean flip);
 void free_shared_resource(GstGLContext* gl_context, SharedResource* resource);
 

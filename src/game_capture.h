@@ -89,8 +89,6 @@ struct game_capture {
   wchar_t                       *app_sid;
   int                           retrying;
 
-  volatile gint                 keep_hook_alive_running;
-  GThread                       *keep_hook_alive_thread;
   volatile gint                 keep_hook_ready_alive_running;
   GThread                       *keep_hook_ready_alive_thread;
   uint64_t                      frame_tick;
@@ -116,7 +114,8 @@ void* game_capture_start(void **data,
     GameCaptureConfig *config, uint64_t frame_interval);
 gboolean game_capture_tick(void * data);
 gboolean game_capture_stop(void * data);
-void set_fps(void **data, uint64_t frame_interval);
+void game_capture_capture_reset(void * data);
+void set_fps(void *data, uint64_t frame_interval);
 uint64_t get_fps(void *data);
 
 wchar_t *get_wc(const char *c);

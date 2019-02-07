@@ -33,7 +33,7 @@ struct _GstChocoboPushSrc
     GstPushSrc         src;
 
     SharedResource     *shared_resource;
-    void*               shtex_handle; /*HANDLE*/
+    guint32            shtex_handle;
     void               *game_context;
     GameCaptureConfig  *game_capture_config;
 
@@ -50,6 +50,8 @@ struct _GstChocoboPushSrc
     gint64 n_frames;
     guint64 last_frame_time;
     gboolean got_frame;
+    gboolean is_error;
+    glong last_error;
 
     /* properties */
     GString  *gc_class_name;

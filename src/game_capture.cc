@@ -27,7 +27,7 @@
 #define MULTICLIENT
 
 #if 1
-#define debug(...) GST_INFO(__VA_ARGS__)
+#define debug(...) GST_DEBUG(__VA_ARGS__)
 #define info(...) GST_INFO(__VA_ARGS__)
 #define warn(...) GST_WARNING(__VA_ARGS__)
 #define error(...) GST_ERROR(__VA_ARGS__)
@@ -62,7 +62,6 @@ enum capture_mode {
   CAPTURE_MODE_HOTKEY
 };
 
-static void* keep_hook_alive_thread(void* data);
 static void* keep_hook_ready_alive_thread(void* data);
 
 static uint32_t inject_failed_count = 0;
@@ -799,20 +798,15 @@ static void stop_capture(struct game_capture *gc)
 {
 #ifndef MULTICLIENT
   ipc_pipe_server_free(&gc->pipe);
-#endif
 
-  if (gc->keep_hook_alive_thread) {
-    g_atomic_int_set(&gc->keep_hook_alive_running, 0);
-    g_thread_join(gc->keep_hook_alive_thread);
+  if (gc->hook_stop) {
+    SetEvent(gc->hook_stop);
   }
+#endif
 
   if (gc->keep_hook_ready_alive_thread) {
     g_atomic_int_set(&gc->keep_hook_ready_alive_running, 0);
     g_thread_join(gc->keep_hook_ready_alive_thread);
-  }
-
-  if (gc->hook_stop) {
-//    SetEvent(gc->hook_stop);
   }
 
   if (gc->global_hook_info) {
@@ -908,8 +902,8 @@ gboolean game_capture_is_active(void * data) {
   return gc->active;
 }
 
-void set_fps(void **data, uint64_t frame_interval) {
-  struct game_capture *gc = (game_capture *)*data;
+void set_fps(void *data, uint64_t frame_interval) {
+  struct game_capture *gc = (game_capture *)data;
 
   if (gc == NULL) {
     return;
@@ -1047,7 +1041,7 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 
 static bool start_capture(struct game_capture *gc)
 {
-  info("Initializing capture with type: %d", gc->global_hook_info->type);
+  debug("Initializing capture with type: %d", gc->global_hook_info->type);
   if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
     if (!init_shmem_capture(gc)) {
       return false;
@@ -1061,13 +1055,6 @@ static bool start_capture(struct game_capture *gc)
 
   g_atomic_pointer_set(&gc->last_map_id,
       static_cast<uint64_t>(gc->global_hook_info->map_id));
-
-  if (g_atomic_int_get(&gc->keep_hook_alive_running) == 0) {
-    info("Spawning keep_hook_alive thread");
-    g_atomic_int_set(&gc->keep_hook_alive_running, 1);
-    gc->keep_hook_alive_thread = g_thread_new("keep_hook_alive_thread",
-        &keep_hook_alive_thread, gc);
-  }
 
   return true;
 }
@@ -1130,6 +1117,26 @@ gboolean game_capture_stop(void *data) {
   stop_capture(gc);
   g_free(gc);
   return TRUE;
+}
+
+void game_capture_capture_reset(void * data) {
+  struct game_capture *gc = (game_capture*) data;
+  if (!gc) {
+    return;
+  }
+
+  info("Resetting capture by sending restart signals to graphics hooks");
+  if (gc->hook_stop) {
+    SetEvent(gc->hook_stop);
+  }
+
+  if (gc->hook_restart) {
+    SetEvent(gc->hook_restart);
+  }
+
+  if (gc->hook_init) {
+    SetEvent(gc->hook_init);
+  }
 }
 
 wchar_t *get_wc(const char *c) {
@@ -1215,47 +1222,6 @@ gboolean game_capture_shmem_draw_frame(struct game_capture* gc, uint8_t* dst_dat
 
   ReleaseMutex(mutex);
   return TRUE;
-}
-
-static void* keep_hook_alive_thread(void* data) {
-  struct game_capture* gc = (game_capture*) data;
-
-  uint64_t wait_time_ms = 1;
-  while (g_atomic_int_get(&gc->keep_hook_alive_running) != 0) {
-    if (!gc->active) {
-      g_usleep((gulong) wait_time_ms * 100);
-      continue;
-    }
-
-    HANDLE events[2] = {
-      gc->hook_init,
-      gc->hook_stop
-    };
-
-    DWORD event = WaitForMultipleObjects(2,
-        events,
-        FALSE,
-        (DWORD) wait_time_ms);
-
-    switch (event) {
-      case WAIT_OBJECT_0:
-        info("hook init signal received, but gc is still active, sending a hook ready signal.");
-        SetEvent(gc->hook_stop);
-        SetEvent(gc->hook_restart);
-        SetEvent(gc->hook_init);
-        g_usleep((gulong) 300 * 1000);  // other application has 300ms to takes it off our hand.
-        ResetEvent(gc->hook_init);
-        ResetEvent(gc->hook_restart);
-        ResetEvent(gc->hook_ready);
-        break;
-      case WAIT_OBJECT_0 + 1:
-        info("hook stop signal received, but gc is still active.");
-        break;
-    }
-  }
-
-  info("Shutting down keep hook alive thread");
-  return NULL;
 }
 
 static void* keep_hook_ready_alive_thread(void* data) {
